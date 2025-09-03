@@ -33,8 +33,8 @@ func LoginOnCargaMaquina() (*http.Client, error) {
 
 	loginPayload := url.Values{
 		"YII_CSRF_TOKEN":        {csrfToken},
-		"LoginForm[username]":   {"rafael"},
-		"LoginForm[password]":   {"R869200.14e"},
+		"LoginForm[username]":   {"username"},
+		"LoginForm[password]":   {"password"},
 		"LoginForm[codigoConexao]": {"3.1~13,3^17,7"},
 		"yt0":                   {"Entrar"},
 	}
