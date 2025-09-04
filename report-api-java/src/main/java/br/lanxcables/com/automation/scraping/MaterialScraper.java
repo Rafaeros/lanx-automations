@@ -3,6 +3,7 @@ package br.lanxcables.com.automation.scraping;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -26,11 +27,13 @@ public class MaterialScraper {
 
     private HttpClient client;
     private String loginUrl = "https://v2.cargamaquina.com.br/site/login?c=3.1~13%2C3%5E17%2C7";
-    private String materialPriceUrl = "https://v2.cargamaquina.com.br/relatorio/catalogo/renderGridExportacaoMateriaisFornecedores";
+    private CookieManager cookie;
+    //private String materialPriceUrl = "https://v2.cargamaquina.com.br/relatorio/catalogo/renderGridExportacaoMateriaisFornecedores";
 
     public MaterialScraper() {
         CookieManager cookieManager = new CookieManager();
         cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+        this.cookie = cookieManager;
         this.client = HttpClient.newBuilder()
                 .cookieHandler(cookieManager)
                 .build();
@@ -44,6 +47,9 @@ public class MaterialScraper {
                     .build();
 
             HttpResponse<String> response = client.send(getLogin, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Get CRSF Token status: " + response.statusCode());
+
             Document doc = Jsoup.parse(response.body());
 
             Element csrfInput = doc.selectFirst("input[name=YII_CSRF_TOKEN]");
@@ -78,7 +84,15 @@ public class MaterialScraper {
                     .build();
 
             HttpResponse<String> response = client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
-            System.out.println("Get CRSF Token status: " + response.statusCode());
+            response.headers().map().forEach((k, v) -> System.out.println(k + ": " + v));
+            
+            if (response.statusCode() < 400 && response.statusCode() >= 200) {
+                System.out.println("Login successful");
+            } else {
+                System.out.println("Login failed with status: " + response.statusCode());
+            }
+
+
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             System.out.println("Erro ao fazer login");
@@ -116,10 +130,26 @@ public class MaterialScraper {
 
     public List<MaterialPrice> fetchMaterialPrice() {
         try {
-            String finalUrl = addParamsToUrl(materialPriceUrl);
+            String finalUrl = addParamsToUrl("https://v2.cargamaquina.com.br/relatorio/catalogo/renderGridExportacaoMateriaisFornecedores");
+
+            HashMap<String, String> cookies = new HashMap<>();
+            for (HttpCookie c : cookie.getCookieStore().getCookies()) {
+                System.out.println("Cookie: " + c.getName() + " = " + c.getValue());
+                cookies.put(c.getName(), c.getValue());
+            }
+
+            StringBuilder cookieHeader = new StringBuilder();
+            for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                if (cookieHeader.length() > 0) {
+                    cookieHeader.append("; "); // separador entre cookies
+                }
+                cookieHeader.append(entry.getKey()).append("=").append(entry.getValue());
+            }
 
             HttpRequest getMaterialPrice = HttpRequest.newBuilder()
                     .uri(URI.create(finalUrl))
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                    .header("Cookie", cookieHeader.toString())
                     .GET()
                     .build();
 
@@ -148,8 +178,7 @@ public class MaterialScraper {
                 return prices;
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Erro ao buscar preço do material");
+            System.out.println("Erro ao buscar preços de materiais"+ e.getMessage());
         }
 
         return new ArrayList<>();

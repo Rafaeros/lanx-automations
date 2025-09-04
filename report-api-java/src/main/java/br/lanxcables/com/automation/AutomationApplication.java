@@ -1,6 +1,6 @@
 package br.lanxcables.com.automation;
 
-//import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import br.lanxcables.com.automation.scraping.MaterialScraper;
 
@@ -8,7 +8,7 @@ import br.lanxcables.com.automation.scraping.MaterialScraper;
 public class AutomationApplication {
 
 	public static void main(String[] args) {
-		// SpringApplication.run(AutomationApplication.class, args);
+		SpringApplication.run(AutomationApplication.class, args);
 
 		MaterialScraper scraper = new MaterialScraper();
 
@@ -17,11 +17,9 @@ public class AutomationApplication {
 
 		// 2. Login
 		scraper.login(csrfToken, "user", "password");
-		System.out.println("Login successful");
 
 		// 3. Fetch Material Prices
 		scraper.fetchMaterialPrice();
-		System.out.println("Fetched material prices");
 
 	}
 
