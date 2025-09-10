@@ -10,18 +10,18 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import br.lanxcables.com.automation.models.MaterialPrice;
-//import br.lanxcables.com.automation.models.MaterialPriceHeaders;
+import br.lanxcables.com.automation.models.MaterialReport;
 
 public class MaterialScraper {
 
@@ -128,7 +128,7 @@ public class MaterialScraper {
         return baseUrl + "?" + paramString;
     }
 
-    public List<MaterialPrice> fetchMaterialPrice() {
+    public MaterialReport fetchMaterialPrice() {
         try {
             String finalUrl = addParamsToUrl("https://v2.cargamaquina.com.br/relatorio/catalogo/renderGridExportacaoMateriaisFornecedores");
 
@@ -162,25 +162,23 @@ public class MaterialScraper {
                 List<String> headers = table.select("thead th").stream()
                         .map(Element::text)
                         .collect(Collectors.toList());
+                List<Map<String, String>> rowsAsMaps = table.select("tbody tr").stream()
+                                            .map(row -> {
+                                                Elements cells = row.select("td");
+                                                return IntStream.range(0, cells.size())
+                                                        .boxed()
+                                                        .collect(Collectors.toMap(headers::get, i -> cells.get(i).text()
+                                                ));
+                                            })
+                                            .collect(Collectors.toList());
 
-                //MaterialPriceHeaders priceHeaders = MaterialPriceHeaders.fromHeadersList(headers);
-                System.out.println("Parsed Headers: " + headers);
-
-                List<MaterialPrice> prices = table.select("tbody tr").stream()
-                        .map(row -> {
-                            List<String> cols = row.select("td").stream()
-                                    .map(Element::text)
-                                    .collect(Collectors.toList());
-                            return MaterialPrice.fromList(cols);
-                        })
-                        .collect(Collectors.toList());
-
-                return prices;
+                MaterialReport report = new MaterialReport();
+                report.fromListMap(rowsAsMaps);
             }
+
         } catch (IOException | InterruptedException e) {
             System.out.println("Erro ao buscar preços de materiais"+ e.getMessage());
         }
-
-        return new ArrayList<>();
+        return null;
     }
 }
