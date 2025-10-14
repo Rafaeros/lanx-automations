@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
         
         csrf_token = csrf_token_input['value']
         print("CSRF Token extraído com sucesso!")
+        app.state.csrf_token = csrf_token
         
         # --- ETAPA 3: Montar o payload de login com o token dinâmico ---
         login_payload = {

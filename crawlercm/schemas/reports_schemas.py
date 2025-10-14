@@ -34,3 +34,18 @@ class ReportScraped(BaseModel):
     lucratividade_percentual: float
     
     condicao_pagamento: str
+
+
+class PendingOrder(BaseModel):
+    """
+    Schema para validar os dados extraídos do relatório.
+    """
+    op: str
+    cliente: str
+    codigo: str
+    produto: str
+    criacao: Optional[date] = None
+    prazo: Optional[date] = None
+    quantidade: int
+    peso: float
+    etapa: str
