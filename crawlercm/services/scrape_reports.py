@@ -3,7 +3,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from typing import List, Optional
 
-from schemas.reports_schemas import ReportScraped, PendingOrder
+from schemas.reports_schemas import PendingMaterial, ReportScraped, PendingOrder
 
 
 def _parse_float(value: str) -> float:
@@ -183,6 +183,63 @@ async def scrape_prod_pending_orders(
                         quantidade=_parse_int(tds[6].text.strip()),
                         peso=_parse_float(tds[7].text.strip()),
                         etapa=tds[8].text.strip(),
+                    )
+                    items_found.append(item)
+            print(f"Items found: {len(items_found)}")
+    except aiohttp.ClientError as exc:
+        print(f"Ocorreu um erro na requisição de scraping: {exc}")
+        return []
+
+    return items_found
+
+
+async def scrape_pending_materials(
+    client: aiohttp.ClientSession,
+    url: str,
+) -> List[PendingMaterial]:
+    """
+    Usa um cliente aiohttp já autenticado para fazer o scraping.
+    """
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+
+        params = {
+            'Pedido[_nomeMaterial]': '',
+            'Pedido[_solicitante]': '',
+            'Pedido[status_id]': '',
+            'Pedido[situacao]': 'TODAS',
+            'Pedido[_qtdeFornecida]': 'Parcialmente',
+            'Pedido[_inicioCriacao]': '01/01/2025',
+            'Pedido[_fimCriacao]': '',
+            'pageSize': '20',
+        }
+
+        async with client.get(url, headers=headers, params=params, timeout=30.0) as response:
+            response.raise_for_status()
+            html = await response.text()
+            soup = BeautifulSoup(html, "html.parser")
+            table = soup.find("table", {"id": "tableExpo"})
+            trs = table.find_all("tr")[1:]
+            items_found: List[PendingMaterial] = []
+            for tr in trs:
+                tds = tr.find_all("td")
+                if tds:
+                    item = PendingMaterial(
+                        criacao=_parse_date(tds[0].text.strip()),
+                        servico=tds[1].text.strip(),
+                        codigo=tds[2].text.strip(),
+                        material=tds[3].text.strip(),
+                        op=tds[4].text.strip(),
+                        produto=tds[5].text.strip(),
+                        sub_produto=tds[6].text.strip(),
+                        previsao_op=_parse_date(tds[7].text.strip()),
+                        quantidade=_parse_float(tds[8].text.strip().split(" ")[0]),
+                        pendente=_parse_float(tds[9].text.strip().split(" ")[0]),
+                        unidade=tds[9].text.strip().split(" ")[-1],
+                        situacao=tds[10].text.strip(),
+                        previsao_mp=_parse_date(tds[11].text.strip()),
                     )
                     items_found.append(item)
             print(f"Items found: {len(items_found)}")

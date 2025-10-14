@@ -10,7 +10,6 @@ class ReportScraped(BaseModel):
     negociacao: str
     tipo_servico: str
     
-    # Datas são opcionais, pois podem não estar sempre presentes
     emissao_pv: Optional[date] = None
     
     pedido_cliente: str
@@ -24,8 +23,6 @@ class ReportScraped(BaseModel):
     qtde_pendente: int
     estoque: int
     
-    # Para valores monetários, `float` é comum, mas `Decimal` é mais preciso.
-    # Se a precisão for crítica, considere usar: from decimal import Decimal
     valor_unitario: float
     ipi: Optional[float] = None
     valor_total: float
@@ -37,9 +34,6 @@ class ReportScraped(BaseModel):
 
 
 class PendingOrder(BaseModel):
-    """
-    Schema para validar os dados extraídos do relatório.
-    """
     op: str
     cliente: str
     codigo: str
@@ -49,3 +43,19 @@ class PendingOrder(BaseModel):
     quantidade: int
     peso: float
     etapa: str
+
+
+class PendingMaterial(BaseModel):
+    criacao: Optional[date] = None
+    servico: str
+    codigo: str
+    material: str
+    op: str
+    produto: str
+    sub_produto: str
+    previsao_op: Optional[date] = None
+    quantidade: float
+    pendente: float
+    unidade: str
+    situacao: str
+    previsao_mp: Optional[date] = None

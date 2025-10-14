@@ -5,8 +5,8 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, Request, HTTPException
 
 from api import deps 
-from schemas.reports_schemas import ReportScraped, PendingOrder
-from services.scrape_reports import scrape_prod_pending_orders, scrape_sales_pending_orders
+from schemas.reports_schemas import PendingMaterial, ReportScraped, PendingOrder
+from services.scrape_reports import scrape_pending_materials, scrape_prod_pending_orders, scrape_sales_pending_orders
 from core.config import settings
 
 
@@ -69,6 +69,20 @@ async def get_prod_pending_orders(
             end_date_str,
             csrf_token
         )
+        return report_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro no scraping: {e}")
+    
+
+@router.get("/materiais_em_falta", response_model=List[PendingMaterial])
+async def get_pending_materials(
+    client: aiohttp.ClientSession = Depends(deps.get_authenticated_client)
+):
+    """
+    Dispara o processo de scraping e retorna os itens encontrados.
+    """
+    try:
+        report_data = await scrape_pending_materials(client, settings.PENDING_MATERIALS_URL)
         return report_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ocorreu um erro no scraping: {e}")

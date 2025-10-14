@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     HOME_URL: str
     SALES_PENDING_ORDER_URL: str
     PROD_PENDING_ORDER_URL: str
+    PENDING_MATERIALS_URL: str
     USERNAME: str
     PASSWORD: str
 
