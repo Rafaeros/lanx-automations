@@ -38,7 +38,8 @@ def format_data_for_excel(report_data: List[FilteredSalesReportItem]) -> bytes:
             code = mat.get('codigo', 'N/A')
             pendente = mat.get('pendente', 'N/A')
             situacao = mat.get('situacao', 'N/A')
-            materiais_str_list.append(f"Cod.: {code} | Qtde. Pendente: {pendente} | STATUS: {situacao}")
+            previsao_mp = mat.get('previsao_mp', 'N/A')
+            materiais_str_list.append(f"Cod.: {code} | Qtde. Pendente: {pendente} | STATUS: {situacao} | PREV: {previsao_mp.strftime('%d/%m/%Y')}")
         item['materiais_pendentes'] = "; \n".join(materiais_str_list) if materiais_str_list else ""
     df = pd.DataFrame(dados_para_df)
     df.rename(columns=header_mapping, inplace=True)

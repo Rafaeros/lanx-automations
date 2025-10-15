@@ -85,10 +85,16 @@ def _parse_date(date_str: str) -> Optional[date]:
     """
     if not date_str or not date_str.strip():
         return None
-    try:
-        return datetime.strptime(date_str, "%d/%m/%y").date()
-    except ValueError:
-        return None
+
+    formats_to_try = ["%d/%m/%Y", "%d/%m/%y"]
+
+    for fmt in formats_to_try:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+
+    return None
 
 
 async def scrape_sales_pending_orders(

@@ -12,13 +12,11 @@ Endpoints:
     - /pending_materials → Fetches pending material items.
 """
 
-from io import BytesIO
 import aiohttp
 from typing import List, Optional
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Response
-from fastapi.responses import StreamingResponse
 
 from api import deps
 from schemas.reports_schemas import (
@@ -39,7 +37,7 @@ from core.config import settings
 
 router = APIRouter()
 init_date_str = (date.today() - timedelta(days=15)).strftime("%d/%m/%Y")
-end_date_str = (date.today() + timedelta(days=30)).strftime("%d/%m/%Y")
+end_date_str = (date.today() + timedelta(days=90)).strftime("%d/%m/%Y")
 
 
 @router.get("/pending_sales", response_model=List[SalesReportItem])
@@ -67,12 +65,15 @@ async def get_sales_pending_orders(
     Raises:
         HTTPException: If any error occurs during the scraping process.
     """
-    if init_date is None:
-        init_date = init_date_str
-    if end_date is None:
-        end_date = end_date_str
-
     try:
+        if init_date is None:
+            init_date = init_date_str
+        if end_date is None:
+            end_date = end_date_str
+
+        init_date = init_date.strftime("%d/%m/%Y")
+        end_date = end_date.strftime("%d/%m/%Y")
+
         logger.info("Fetching sales pending orders...")
         report_data = await scrape_sales_pending_orders(
             client, settings.SALES_PENDING_ORDER_URL, init_date_str, end_date_str
@@ -119,12 +120,15 @@ async def get_prod_pending_orders(
         HTTPException: If any error occurs during the scraping process.
     """
 
-    if init_date is None:
-        init_date = init_date_str
-    if end_date is None:
-        end_date = end_date_str
-
     try:
+        if init_date is None:
+            init_date = init_date_str
+        if end_date is None:
+            end_date = end_date_str
+
+        init_date = init_date.strftime("%d/%m/%Y")
+        end_date = end_date.strftime("%d/%m/%Y")
+
         logger.info("Fetching production pending orders...")
         csrf_token = request.app.state.csrf_token
         report_data = await scrape_prod_pending_orders(
@@ -184,7 +188,7 @@ async def get_pending_materials(
 
 
 @router.get("/filtered_sales_report", response_model=List[FilteredSalesReportItem])
-async def get_pending_materials(
+async def get_filtered_sales_report(
     request: Request,
     client: aiohttp.ClientSession = Depends(deps.get_authenticated_client), 
     init_date: Optional[date] = None,
@@ -214,6 +218,10 @@ async def get_pending_materials(
             init_date = init_date_str
         if end_date is None:
             end_date = end_date_str
+
+        init_date = init_date.strftime("%d/%m/%Y")
+        end_date = end_date.strftime("%d/%m/%Y")
+
         logger.info("Fetching combining sales reports...")
         urls = {
             "sales": settings.SALES_PENDING_ORDER_URL,
@@ -258,7 +266,7 @@ async def export_filtered_sales_report(
         HTTPException: If an error occurs during the scraping or file generation process.
     """
     init_date_str = (init_date or (date.today() - timedelta(days=15))).strftime("%d/%m/%Y")
-    end_date_str = (end_date or (date.today() + timedelta(days=30))).strftime("%d/%m/%Y")
+    end_date_str = (end_date or (date.today() + timedelta(days=90))).strftime("%d/%m/%Y")
     
     try:
         urls = {
