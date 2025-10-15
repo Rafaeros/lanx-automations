@@ -7,13 +7,18 @@ and pending materials) from the CM system. Helper functions are included to
 parse numeric and date strings from the HTML tables.
 """
 
+import asyncio
+from collections import defaultdict
 from datetime import date, datetime
+from io import BytesIO
 import aiohttp
 from bs4 import BeautifulSoup
 from typing import List, Optional
+import pandas as pd
 
 from core.logger import logger
 from schemas.reports_schemas import (
+    FilteredSalesReportItem,
     PendingMaterialsItem,
     SalesReportItem,
     PendingOrdersItem,
@@ -38,20 +43,21 @@ def _parse_float(value: str) -> float:
     if not cleaned_value:
         return 0.0
 
-    if ',' in cleaned_value:
-        cleaned_value = cleaned_value.replace('.', '').replace(',', '.')
-    
-    elif '.' in cleaned_value:
-        parts = cleaned_value.split('.')
+    if "," in cleaned_value:
+        cleaned_value = cleaned_value.replace(".", "").replace(",", ".")
+
+    elif "." in cleaned_value:
+        parts = cleaned_value.split(".")
         if len(parts[-1]) == 3 and len(parts) > 1:
-            cleaned_value = ''.join(parts)
+            cleaned_value = "".join(parts)
         else:
-            cleaned_value = ''.join(parts[:-1]) + '.' + parts[-1]
+            cleaned_value = "".join(parts[:-1]) + "." + parts[-1]
 
     try:
         return float(cleaned_value)
     except (ValueError, TypeError):
         return 0.0
+
 
 def _parse_int(value: str) -> int:
     """
@@ -65,6 +71,7 @@ def _parse_int(value: str) -> int:
     """
     float_value = _parse_float(value)
     return int(float_value)
+
 
 def _parse_date(date_str: str) -> Optional[date]:
     """
@@ -115,7 +122,7 @@ async def scrape_sales_pending_orders(
         }
         logger.info("Scraping sales pending orders...")
         async with client.get(
-            url, headers=headers, params=params, timeout=30.0
+            url, headers=headers, params=params
         ) as response:
             response.raise_for_status()
             html = await response.text()
@@ -152,11 +159,11 @@ async def scrape_sales_pending_orders(
                         lucratividade_percentual=_parse_float(tds[17].text),
                     )
                     items_found.append(item)
-            logger.info(f"Items found: {len(items_found)}")
+            logger.info(f"Pendind Sales Items found: {len(items_found)}")
     except aiohttp.ClientError as e:
         logger.error(f"Error scraping sales pending orders: {e}")
         return []
-    
+
     return items_found
 
 
@@ -196,7 +203,7 @@ async def scrape_prod_pending_orders(
         }
         logger.info("Scraping production pending orders...")
         async with client.post(
-            url, headers=headers, params=params, timeout=30.0
+            url, headers=headers, params=params
         ) as response:
             response.raise_for_status()
             html = await response.text()
@@ -219,7 +226,7 @@ async def scrape_prod_pending_orders(
                         etapa=tds[8].text.strip(),
                     )
                     items_found.append(item)
-            print(f"Items found: {len(items_found)}")
+            logger.info(f"Pending Orders Items found: {len(items_found)}")
     except aiohttp.ClientError as e:
         logger.error(f"Error scraping production pending orders: {e}")
         return []
@@ -261,7 +268,7 @@ async def scrape_pending_materials(
         }
         logger.info("Scraping pending materials")
         async with client.get(
-            url, headers=headers, params=params, timeout=30.0
+            url, headers=headers, params=params
         ) as response:
             response.raise_for_status()
             html = await response.text()
@@ -288,8 +295,113 @@ async def scrape_pending_materials(
                         previsao_mp=_parse_date(tds[11].text.strip()),
                     )
                     items_found.append(item)
+            logger.info(f"Pending Materials Items found: {len(items_found)}")
     except aiohttp.ClientError as e:
         logger.error(f"Error scraping pending materials: {e}")
         return []
 
     return items_found
+
+
+def combine_data(
+    sales_reports: List[SalesReportItem],
+    pending_orders: List[PendingOrdersItem],
+    pending_materials: List[PendingMaterialsItem],
+) -> List[FilteredSalesReportItem]:
+    """
+    Combine the data of sales reports, production pending orders, and pending materials, by op number value.
+
+    Args:
+        sales_reports (List[SalesReportItem]): List of sales report items.
+        pending_orders (List[PendingOrdersItem]): List of production pending orders.
+        pending_materials (List[PendingMaterialsItem]): List of pending materials.
+
+    Returns:
+        List[FilteredSalesReportItem]: List of parsed production pending orders.
+    """
+    try:
+        logger.info("Combining data...")
+        orders_map = {order.op: order for order in pending_orders}
+        materials_map = defaultdict(list)
+        for material in pending_materials:
+            materials_map[material.op].append(material)
+
+        filtered_sales_list = []
+        for sales_item in sales_reports:
+            current_op = sales_item.op
+            matching_order = orders_map.get(current_op)
+            etapa_producao = matching_order.etapa if matching_order else "N/A"
+            matching_materials = materials_map.get(current_op, [])
+
+            filtered_item = FilteredSalesReportItem(
+                negociacao=sales_item.negociacao,
+                pedido_cliente=sales_item.pedido_cliente,
+                op=sales_item.op,
+                tipo_servico=sales_item.tipo_servico,
+                numero_projeto=sales_item.numero_projeto,
+                codigo=sales_item.codigo,
+                produto=sales_item.produto,
+                previsao=sales_item.previsao,
+                qtde_pendente=sales_item.qtde_pendente,
+                valor_unitario=sales_item.valor_unitario,
+                ipi=sales_item.ipi,
+                valor_total=sales_item.valor_total,
+                etapa=etapa_producao,
+                materiais_pendentes=matching_materials,
+            )
+            filtered_sales_list.append(filtered_item)
+    except Exception as e:
+        logger.error(f"Error combining data: {e}")
+        return []
+
+    return filtered_sales_list
+
+
+async def get_combined_report_data(
+    client: aiohttp.ClientSession,
+    urls: dict[str, str],
+    init_date_str: str,
+    end_date_str: str,
+    csrf_token: str,
+) -> List[FilteredSalesReportItem]:
+    """
+    Scrape the production pending orders report from the CM system.
+
+    Args:
+        client (aiohttp.ClientSession): Authenticated aiohttp client session.
+        urls (dict[str]): URLs for different report sources.
+        init_date (str): Start date in "DD/MM/YYYY" format.
+        end_date (str): End date in "DD/MM/YYYY" format.
+        yii_token (str): CSRF token required for POST requests.
+
+    Returns:
+        List[FilteredSalesReportItem]: List of parsed production pending orders.
+
+    Raises:
+        aiohttp.ClientError: If the HTTP request fails.
+    """
+    try:
+        logger.info("Starting parallel tasks for scraping of all report sources...")
+        
+        tasks = [
+            scrape_sales_pending_orders(client, urls["sales"], init_date_str, end_date_str),
+            scrape_prod_pending_orders(client, urls["prod"], init_date_str, end_date_str, csrf_token),
+            scrape_pending_materials(client, urls["materials"]),
+        ]
+        
+        sales_data, orders_data, materials_data = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in [sales_data, orders_data, materials_data]:
+            if isinstance(result, Exception):
+                logger.error(f"A scraping task failed: {result}")
+                raise result
+
+        logger.info("All scraping tasks completed successfully. Combining data...")
+        
+        combined_list = combine_data(sales_data, orders_data, materials_data)
+        
+        logger.info("Data combined successfully!")
+    except Exception as e:
+        logger.error(f"Error combining data: {e}")
+
+    return combined_list

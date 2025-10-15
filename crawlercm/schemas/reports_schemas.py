@@ -6,7 +6,7 @@ the scraping services. They represent reports for sales, production
 orders, and pending materials.
 """
 
-from typing import Optional
+from typing import List, Optional
 from datetime import date
 from pydantic import BaseModel, Field
 
@@ -100,3 +100,26 @@ class PendingMaterialsItem(BaseModel):
     previsao_mp: Optional[date] = Field(
         None, description="Expected date for material availability."
     )
+
+
+class FilteredSalesReportItem(BaseModel):
+    """
+    Class representing a filtered sales report item.
+    """
+
+    negociacao: str = Field(..., description="Negotiation or deal identifier.")
+    pedido_cliente: str = Field(..., description="Customer's order number.")
+    op: str = Field(..., description="Production order code (OP).")
+    tipo_servico: str = Field(..., description="Type of service or sales operation.")
+    numero_projeto: str = Field(..., description="Project or job number.")
+    codigo: str = Field(..., description="Product code.")
+    produto: str = Field(..., description="Product description.")
+    previsao: Optional[date] = Field(
+        None, description="Expected delivery or completion date."
+    )
+    qtde_pendente: int = Field(..., description="Pending quantity.")
+    valor_unitario: float = Field(..., description="Unit price of the item.")
+    ipi: Optional[float] = Field(None, description="IPI tax percentage, if applicable.")
+    valor_total: float = Field(..., description="Total value for the order line.")
+    etapa: str = Field(..., description="Current production stage.")
+    materiais_pendentes: List[PendingMaterialsItem] = Field(default_factory=list, description="List of pending materials.")
