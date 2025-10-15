@@ -1,71 +1,80 @@
+"""
+Service to scrape reports data from CM.
+
+This module contains functions that use an authenticated aiohttp client session
+to scrape various reports (sales pending orders, production pending orders,
+and pending materials) from the CM system. Helper functions are included to
+parse numeric and date strings from the HTML tables.
+"""
+
 from datetime import date, datetime
 import aiohttp
 from bs4 import BeautifulSoup
 from typing import List, Optional
 
-from schemas.reports_schemas import PendingMaterial, ReportScraped, PendingOrder
+from core.logger import logger
+from schemas.reports_schemas import (
+    PendingMaterialsItem,
+    SalesReportItem,
+    PendingOrdersItem,
+)
 
 
 def _parse_float(value: str) -> float:
     """
-    Converte uma string para float de forma inteligente, identificando
-    automaticamente os separadores de milhar e decimal.
-    Lida com formatos como '1.234,56' (BR) e '1,234.56' (US).
+    Converte uma string para float, lidando com formatos brasileiros (ex: "1.300,00")
+    e aplicando uma heurística para valores ambíguos como "1.300".
+
+    Args:
+        value (str): A string numérica a ser convertida.
+
+    Returns:
+        float: O valor float convertido. Retorna 0.0 se a conversão falhar.
     """
-    if not value or not isinstance(value, str) or not value.strip():
+    if not isinstance(value, str):
         return 0.0
 
     cleaned_value = value.strip()
+    if not cleaned_value:
+        return 0.0
 
-    # Verifica a presença de ambos os separadores
-    has_dot = "." in cleaned_value
-    has_comma = "," in cleaned_value
-
-    if has_dot and has_comma:
-        # Se a vírgula vem depois do ponto, asumimos o formato BR (1.234,56)
-        if cleaned_value.rfind(",") > cleaned_value.rfind("."):
-            # Remove os pontos (milhar) e substitui a vírgula (decimal) por ponto
-            cleaned_value = cleaned_value.replace(".", "").replace(",", ".")
-        else:  # Senão, asumimos o formato US (1,234.56)
-            # Remove as vírgulas (milhar)
-            cleaned_value = cleaned_value.replace(",", "")
-    elif has_comma:
-        # Se há apenas vírgulas, elas podem ser de milhar ou um único decimal
-        # Se for só uma vírgula e tiver 2 casas depois, é provável que seja decimal
-        if cleaned_value.count(",") == 1 and len(cleaned_value.split(",")[1]) in [
-            1,
-            2,
-            3,
-        ]:
-            cleaned_value = cleaned_value.replace(",", ".")
-        else:  # Mais de uma vírgula, são de milhar
-            cleaned_value = cleaned_value.replace(",", "")
-
-    # Se há apenas pontos, podem ser de milhar ou um único decimal
-    # Se houver mais de um ponto, eles SÃO de milhar.
-    elif cleaned_value.count(".") > 1:
-        cleaned_value = cleaned_value.replace(".", "")
+    if ',' in cleaned_value:
+        cleaned_value = cleaned_value.replace('.', '').replace(',', '.')
+    
+    elif '.' in cleaned_value:
+        parts = cleaned_value.split('.')
+        if len(parts[-1]) == 3 and len(parts) > 1:
+            cleaned_value = ''.join(parts)
+        else:
+            cleaned_value = ''.join(parts[:-1]) + '.' + parts[-1]
 
     try:
         return float(cleaned_value)
     except (ValueError, TypeError):
         return 0.0
 
-
 def _parse_int(value: str) -> int:
     """
-    Converte uma string para int. Usa a inteligência da `parse_float`
-    para lidar com diferentes formatos de número.
-    Não precisa de alterações.
+    Parse a string into an integer using `_parse_float`.
+
+    Args:
+        value (str): Numeric string.
+
+    Returns:
+        int: Parsed integer value.
     """
     float_value = _parse_float(value)
     return int(float_value)
 
-
 def _parse_date(date_str: str) -> Optional[date]:
     """
-    Converte uma string no formato 'DD/MM/YY' para um objeto de data.
-    Retorna None se a string for vazia ou inválida.
+    Parse a short date string into a date object.
+
+    Args:
+        date_str (str): Date string in format "DD/MM/YY".
+
+    Returns:
+        Optional[date]: Date object, or None if parsing fails.
     """
     if not date_str or not date_str.strip():
         return None
@@ -77,9 +86,21 @@ def _parse_date(date_str: str) -> Optional[date]:
 
 async def scrape_sales_pending_orders(
     client: aiohttp.ClientSession, url: str, init_date: str, end_date: str
-) -> List[ReportScraped]:
+) -> List[SalesReportItem]:
     """
-    Usa um cliente aiohttp já autenticado para fazer o scraping.
+    Scrape the sales pending orders report from the CM system.
+
+    Args:
+        client (aiohttp.ClientSession): Authenticated aiohttp client session.
+        url (str): URL of the sales pending orders report.
+        init_date (str): Start date in "DD/MM/YYYY" format.
+        end_date (str): End date in "DD/MM/YYYY" format.
+
+    Returns:
+        List[SalesReportItem]: List of parsed sales report items.
+
+    Raises:
+        aiohttp.ClientError: If the HTTP request fails.
     """
     try:
         headers = {
@@ -92,7 +113,7 @@ async def scrape_sales_pending_orders(
             "RelatorioPedidosPendentes[emissor]": "37299632",
             "RelatorioPedidosPendentes[situacao]": "",
         }
-
+        logger.info("Scraping sales pending orders...")
         async with client.get(
             url, headers=headers, params=params, timeout=30.0
         ) as response:
@@ -101,40 +122,41 @@ async def scrape_sales_pending_orders(
             soup = BeautifulSoup(html, "html.parser")
             table = soup.find("table", {"id": "tableExpo"})
             trs = table.find_all("tr")[1:]
-            items_found: List[ReportScraped] = []
-            for row in trs:
-                if not row.text.strip():
+            items_found: List[SalesReportItem] = []
+
+            for tr in trs:
+                if not tr.text.strip():
                     break
 
-                cells = row.find_all("td")
-                if len(cells) >= 14:
-                    item = ReportScraped(
-                        cliente=cells[0].text.strip(),
-                        negociacao=cells[1].text.strip(),
-                        tipo_servico=cells[2].text.strip(),
-                        pedido_cliente=cells[4].text.strip(),
-                        op=cells[5].text.strip(),
-                        numero_projeto=cells[6].text.strip(),
-                        codigo=cells[7].text.strip(),
-                        produto=cells[8].text.strip(),
-                        condicao_pagamento=cells[18].text.strip(),
-                        emissao_pv=cells[3].text.strip() or None,
-                        previsao=cells[9].text.strip() or None,
-                        qtde_pendente=_parse_int(cells[10].text),
-                        estoque=_parse_int(cells[11].text),
-                        valor_unitario=_parse_float(cells[12].text),
-                        ipi=_parse_float(cells[13].text),
-                        valor_total=_parse_float(cells[14].text),
-                        custo_estrutura=_parse_float(cells[15].text),
-                        lucratividade_rs=_parse_float(cells[16].text),
-                        lucratividade_percentual=_parse_float(cells[17].text),
+                tds = tr.find_all("td")
+                if len(tds) >= 14:
+                    item = SalesReportItem(
+                        cliente=tds[0].text.strip(),
+                        negociacao=tds[1].text.strip(),
+                        tipo_servico=tds[2].text.strip(),
+                        pedido_cliente=tds[4].text.strip(),
+                        op=tds[5].text.strip(),
+                        numero_projeto=tds[6].text.strip(),
+                        codigo=tds[7].text.strip(),
+                        produto=tds[8].text.strip(),
+                        condicao_pagamento=tds[18].text.strip(),
+                        emissao_pv=tds[3].text.strip() or None,
+                        previsao=tds[9].text.strip() or None,
+                        qtde_pendente=_parse_int(tds[10].text),
+                        estoque=_parse_int(tds[11].text),
+                        valor_unitario=_parse_float(tds[12].text),
+                        ipi=_parse_float(tds[13].text),
+                        valor_total=_parse_float(tds[14].text),
+                        custo_estrutura=_parse_float(tds[15].text),
+                        lucratividade_rs=_parse_float(tds[16].text),
+                        lucratividade_percentual=_parse_float(tds[17].text),
                     )
                     items_found.append(item)
-            print(f"Items encontrados: {len(items_found)}")
-    except aiohttp.ClientError as exc:
-        print(f"Ocorreu um erro na requisição de scraping: {exc}")
+            logger.info(f"Items found: {len(items_found)}")
+    except aiohttp.ClientError as e:
+        logger.error(f"Error scraping sales pending orders: {e}")
         return []
-
+    
     return items_found
 
 
@@ -144,9 +166,22 @@ async def scrape_prod_pending_orders(
     init_date: str,
     end_date: str,
     yii_token: str,
-) -> List[PendingOrder]:
+) -> List[PendingOrdersItem]:
     """
-    Usa um cliente aiohttp já autenticado para fazer o scraping.
+    Scrape the production pending orders report from the CM system.
+
+    Args:
+        client (aiohttp.ClientSession): Authenticated aiohttp client session.
+        url (str): URL of the production pending orders report.
+        init_date (str): Start date in "DD/MM/YYYY" format.
+        end_date (str): End date in "DD/MM/YYYY" format.
+        yii_token (str): CSRF token required for POST requests.
+
+    Returns:
+        List[PendingOrdersItem]: List of parsed production pending orders.
+
+    Raises:
+        aiohttp.ClientError: If the HTTP request fails.
     """
     try:
         headers = {
@@ -159,21 +194,20 @@ async def scrape_prod_pending_orders(
             "clienteId": "",
             "YII_CSRF_TOKEN": yii_token,
         }
-
-        async with client.post(url, headers=headers, params=params, timeout=30.0) as response:
+        logger.info("Scraping production pending orders...")
+        async with client.post(
+            url, headers=headers, params=params, timeout=30.0
+        ) as response:
             response.raise_for_status()
-
-            print("STATUS_CODE: ", response.status)
-
             html = await response.text()
             soup = BeautifulSoup(html, "html.parser")
             table = soup.find("table", {"id": "tableExpo"})
             trs = table.find_all("tr")[1:]
-            items_found: List[PendingOrder] = []
+            items_found: List[PendingOrdersItem] = []
             for tr in trs:
                 tds = tr.find_all("td")
                 if tds:
-                    item = PendingOrder(
+                    item = PendingOrdersItem(
                         op=tds[0].text.strip(),
                         cliente=tds[1].text.strip(),
                         codigo=tds[2].text.strip(),
@@ -186,8 +220,8 @@ async def scrape_prod_pending_orders(
                     )
                     items_found.append(item)
             print(f"Items found: {len(items_found)}")
-    except aiohttp.ClientError as exc:
-        print(f"Ocorreu um erro na requisição de scraping: {exc}")
+    except aiohttp.ClientError as e:
+        logger.error(f"Error scraping production pending orders: {e}")
         return []
 
     return items_found
@@ -196,9 +230,19 @@ async def scrape_prod_pending_orders(
 async def scrape_pending_materials(
     client: aiohttp.ClientSession,
     url: str,
-) -> List[PendingMaterial]:
+) -> List[PendingMaterialsItem]:
     """
-    Usa um cliente aiohttp já autenticado para fazer o scraping.
+    Scrape the pending materials report from the CM system.
+
+    Args:
+        client (aiohttp.ClientSession): Authenticated aiohttp client session.
+        url (str): URL of the pending materials report.
+
+    Returns:
+        List[PendingMaterialsItem]: List of parsed pending materials items.
+
+    Raises:
+        aiohttp.ClientError: If the HTTP request fails.
     """
     try:
         headers = {
@@ -206,27 +250,29 @@ async def scrape_pending_materials(
         }
 
         params = {
-            'Pedido[_nomeMaterial]': '',
-            'Pedido[_solicitante]': '',
-            'Pedido[status_id]': '',
-            'Pedido[situacao]': 'TODAS',
-            'Pedido[_qtdeFornecida]': 'Parcialmente',
-            'Pedido[_inicioCriacao]': '01/01/2025',
-            'Pedido[_fimCriacao]': '',
-            'pageSize': '20',
+            "Pedido[_nomeMaterial]": "",
+            "Pedido[_solicitante]": "",
+            "Pedido[status_id]": "",
+            "Pedido[situacao]": "TODAS",
+            "Pedido[_qtdeFornecida]": "Parcialmente",
+            "Pedido[_inicioCriacao]": "01/01/2025",
+            "Pedido[_fimCriacao]": "",
+            "pageSize": "20",
         }
-
-        async with client.get(url, headers=headers, params=params, timeout=30.0) as response:
+        logger.info("Scraping pending materials")
+        async with client.get(
+            url, headers=headers, params=params, timeout=30.0
+        ) as response:
             response.raise_for_status()
             html = await response.text()
             soup = BeautifulSoup(html, "html.parser")
             table = soup.find("table", {"id": "tableExpo"})
             trs = table.find_all("tr")[1:]
-            items_found: List[PendingMaterial] = []
+            items_found: List[PendingMaterialsItem] = []
             for tr in trs:
                 tds = tr.find_all("td")
                 if tds:
-                    item = PendingMaterial(
+                    item = PendingMaterialsItem(
                         criacao=_parse_date(tds[0].text.strip()),
                         servico=tds[1].text.strip(),
                         codigo=tds[2].text.strip(),
@@ -242,9 +288,8 @@ async def scrape_pending_materials(
                         previsao_mp=_parse_date(tds[11].text.strip()),
                     )
                     items_found.append(item)
-            print(f"Items found: {len(items_found)}")
-    except aiohttp.ClientError as exc:
-        print(f"Ocorreu um erro na requisição de scraping: {exc}")
+    except aiohttp.ClientError as e:
+        logger.error(f"Error scraping pending materials: {e}")
         return []
 
     return items_found

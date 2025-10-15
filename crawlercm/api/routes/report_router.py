@@ -1,0 +1,178 @@
+"""
+Routes for retrieving reports data via scraping.
+
+This module defines endpoints that trigger asynchronous scraping
+processes to fetch sales, production, and material-related reports
+from external systems. Each route manages its own date range defaults,
+formatting, and exception handling.
+
+Endpoints:
+    - /pending_sales → Fetches sales report data.
+    - /pending_orders → Fetches pending production orders.
+    - /pending_materials → Fetches pending material items.
+"""
+
+import aiohttp
+from typing import List, Optional
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, Request, HTTPException
+
+from api import deps
+from schemas.reports_schemas import (
+    PendingMaterialsItem,
+    SalesReportItem,
+    PendingOrdersItem,
+)
+from services.scrape_reports import (
+    scrape_pending_materials,
+    scrape_prod_pending_orders,
+    scrape_sales_pending_orders,
+)
+from core.logger import logger
+from core.config import settings
+
+router = APIRouter()
+init_date_str = (date.today() - timedelta(days=15)).strftime("%d/%m/%Y")
+end_date_str = (date.today() + timedelta(days=30)).strftime("%d/%m/%Y")
+
+
+@router.get("/pending_sales", response_model=List[SalesReportItem])
+async def get_sales_pending_orders(
+    client: aiohttp.ClientSession = Depends(deps.get_authenticated_client),
+    init_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+) -> List[SalesReportItem]:
+    """
+    Fetches sales orders via scraping.
+
+    This endpoint triggers an asynchronous scraping process to retrieve
+    sales orders from the external system. If no date range is provided,
+    it defaults to the last 15 days and the next 30 days. Dates are internally
+    formatted as DD/MM/YYYY before being sent to the target system.
+
+    Args:
+        client (aiohttp.ClientSession): An authenticated HTTP client injected via dependency.
+        init_date (Optional[date], optional): Start date for the search range. Defaults to 15 days ago.
+        end_date (Optional[date], optional): End date for the search range. Defaults to 30 days from today.
+
+    Returns:
+        List[SalesReportItem]: A list of sales orders retrieved from the external system.
+
+    Raises:
+        HTTPException: If any error occurs during the scraping process.
+    """
+    if init_date is None:
+        init_date = init_date_str
+    if end_date is None:
+        end_date = end_date_str
+
+    try:
+        logger.info("Fetching sales pending orders...")
+        report_data = await scrape_sales_pending_orders(
+            client, settings.SALES_PENDING_ORDER_URL, init_date_str, end_date_str
+        )
+        if not report_data:
+            raise HTTPException(
+                status_code=404, detail="No sales pending orders found."
+            )
+        logger.info("Sales pending orders fetched successfully!")
+        return report_data
+    except Exception as e:
+        logger.error(f"Ocorreu um erro no scraping: {e}")
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro no scraping: {e}")
+
+
+@router.get("/pending_orders", response_model=List[PendingOrdersItem])
+async def get_prod_pending_orders(
+    request: Request,
+    client: aiohttp.ClientSession = Depends(deps.get_authenticated_client),
+    init_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+) -> List[PendingOrdersItem]:
+    """
+    Fetches pending production orders via scraping.
+
+    This endpoint triggers an asynchronous scraping process to retrieve
+    pending production orders from the external system. If no date range
+    is provided, it defaults to the last 15 days and the next 30 days.
+
+    Dates are internally formatted as DD/MM/YYYY before sending to the
+    target system. The CSRF token required for authentication is accessed
+    via the FastAPI app state.
+
+    Args:
+        request (Request): The FastAPI request object. Used to access app state data (e.g., CSRF token).
+        client (aiohttp.ClientSession): An authenticated HTTP client injected via dependency.
+        init_date (Optional[date], optional): Start date for the search range. Defaults to 15 days ago.
+        end_date (Optional[date], optional): End date for the search range. Defaults to 30 days from today.
+
+    Returns:
+        List[PendingOrdersItem]: A list of pending production orders retrieved from the external system.
+
+    Raises:
+        HTTPException: If any error occurs during the scraping process.
+    """
+
+    if init_date is None:
+        init_date = init_date_str
+    if end_date is None:
+        end_date = end_date_str
+
+    try:
+        logger.info("Fetching production pending orders...")
+        csrf_token = request.app.state.csrf_token
+        report_data = await scrape_prod_pending_orders(
+            client,
+            settings.PROD_PENDING_ORDER_URL,
+            init_date_str,
+            end_date_str,
+            csrf_token,
+        )
+
+        if not report_data:
+            raise HTTPException(
+                status_code=404, detail="No production pending orders found."
+            )
+
+        logger.info("Production pending orders fetched successfully!")
+        return report_data
+    except Exception as e:
+        logger.error(f"Ocorreu um erro no scraping: {e}")
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro no scraping: {e}")
+
+
+@router.get("/pending_materials", response_model=List[PendingMaterialsItem])
+async def get_pending_materials(
+    client: aiohttp.ClientSession = Depends(deps.get_authenticated_client),
+) -> List[PendingMaterialsItem]:
+    """
+    Fetches pending material items via scraping.
+
+    This endpoint triggers an asynchronous scraping process to retrieve
+    pending materials data from the external system. It requires a
+    previously authenticated client session.
+
+    Args:
+        client (aiohttp.ClientSession): An authenticated HTTP client injected via dependency.
+
+    Returns:
+        List[PendingMaterialsItem]: A list of pending materials retrieved from the external system.
+
+    Raises:
+        HTTPException: If any error occurs during the scraping process.
+    """
+    try:
+        logger.info("Fetching pending materials...")
+        report_data = await scrape_pending_materials(
+            client, settings.PENDING_MATERIALS_URL
+        )
+
+        if not report_data:
+            raise HTTPException(status_code=404, detail="No pending materials found.")
+
+        logger.info("Pending materials fetched successfully!")
+        return report_data
+    except Exception as e:
+        logger.error(f"Ocorreu um erro no scraping: {e}")
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro no scraping: {e}")
