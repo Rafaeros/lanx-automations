@@ -1,5 +1,3 @@
-
-
 from io import BytesIO
 from typing import List
 
@@ -39,7 +37,11 @@ def format_data_for_excel(report_data: List[FilteredSalesReportItem]) -> bytes:
             pendente = mat.get('pendente', 'N/A')
             situacao = mat.get('situacao', 'N/A')
             previsao_mp = mat.get('previsao_mp', 'N/A')
-            materiais_str_list.append(f"Cod.: {code} | Qtde. Pendente: {pendente} | STATUS: {situacao} | PREV: {previsao_mp.strftime('%d/%m/%Y')}")
+            if previsao_mp != 'N/A' and hasattr(previsao_mp, 'strftime'):
+                formated_date = previsao_mp.strftime('%d/%m/%Y')
+            else:
+                formated_date = 'N/A'
+            materiais_str_list.append(f"Cod.: {code} | Qtde. Pendente: {pendente} | STATUS: {situacao} | PREV: {formated_date}")
         item['materiais_pendentes'] = "; \n".join(materiais_str_list) if materiais_str_list else ""
     df = pd.DataFrame(dados_para_df)
     df.rename(columns=header_mapping, inplace=True)
