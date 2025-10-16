@@ -68,11 +68,13 @@ async def get_sales_pending_orders(
     try:
         if init_date is None:
             init_date = init_date_str
+        else:
+            init_date = init_date.strftime("%d/%m/%Y")
+
         if end_date is None:
             end_date = end_date_str
-
-        init_date = init_date.strftime("%d/%m/%Y")
-        end_date = end_date.strftime("%d/%m/%Y")
+        else:
+            end_date = end_date.strftime("%d/%m/%Y")
 
         logger.info("Fetching sales pending orders...")
         report_data = await scrape_sales_pending_orders(
@@ -123,11 +125,13 @@ async def get_prod_pending_orders(
     try:
         if init_date is None:
             init_date = init_date_str
+        else:
+            init_date = init_date.strftime("%d/%m/%Y")
+
         if end_date is None:
             end_date = end_date_str
-
-        init_date = init_date.strftime("%d/%m/%Y")
-        end_date = end_date.strftime("%d/%m/%Y")
+        else:
+            end_date = end_date.strftime("%d/%m/%Y")
 
         logger.info("Fetching production pending orders...")
         csrf_token = request.app.state.csrf_token
@@ -216,11 +220,13 @@ async def get_filtered_sales_report(
     try:
         if init_date is None:
             init_date = init_date_str
+        else:
+            init_date = init_date.strftime("%d/%m/%Y")
+
         if end_date is None:
             end_date = end_date_str
-
-        init_date = init_date.strftime("%d/%m/%Y")
-        end_date = end_date.strftime("%d/%m/%Y")
+        else:
+            end_date = end_date.strftime("%d/%m/%Y")
 
         logger.info("Fetching combining sales reports...")
         urls = {
@@ -265,8 +271,15 @@ async def export_filtered_sales_report(
     Raises:
         HTTPException: If an error occurs during the scraping or file generation process.
     """
-    init_date_str = (init_date or (date.today() - timedelta(days=15))).strftime("%d/%m/%Y")
-    end_date_str = (end_date or (date.today() + timedelta(days=90))).strftime("%d/%m/%Y")
+    if init_date is None:
+        init_date = init_date_str
+    else:
+        init_date = init_date.strftime("%d/%m/%Y")
+
+    if end_date is None:
+        end_date = end_date_str
+    else:
+        end_date = end_date.strftime("%d/%m/%Y")
     
     try:
         urls = {
