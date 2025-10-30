@@ -198,10 +198,14 @@ async def scrape_prod_pending_orders(
     """
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "...",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-CSRF-Token": yii_token,
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://app.cargamaquina.com.br/analitico/producao/ordensPendentes",
         }
 
-        params = {
+        data = {
             "dataInicio": init_date,
             "dataFim": end_date,
             "clienteId": "",
@@ -209,7 +213,7 @@ async def scrape_prod_pending_orders(
         }
         logger.info("Scraping production pending orders...")
         async with client.post(
-            url, headers=headers, params=params
+            url, headers=headers, data=data
         ) as response:
             response.raise_for_status()
             html = await response.text()
