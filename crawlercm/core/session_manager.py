@@ -69,3 +69,63 @@ async def lifespan(app: FastAPI):
         if hasattr(app.state, "http_client") and not app.state.http_client.closed:
             await app.state.http_client.close()
             logger.warning("Aiohttp session closed gracefully.")
+
+class AuthOnCM:
+    def __init__(self):
+        self.session: aiohttp.ClientSession | None = None
+        self.csrf_token: str | None = None
+
+    async def login(self):
+        logger.info("Starting aiohttp session...")
+        self.session = aiohttp.ClientSession()
+
+        try:
+            logger.info(f"Getting CSRF from {settings.LOGIN_URL} ...")
+
+            async with self.session.get(settings.LOGIN_URL) as r:
+                r.raise_for_status()
+                html = await r.text()
+
+            soup = BeautifulSoup(html, "html.parser")
+            csrf_input = soup.find("input", {"name": "YII_CSRF_TOKEN"})
+
+            if not csrf_input or "value" not in csrf_input.attrs:
+                raise Exception("CSRF token not found.")
+
+            self.csrf_token = csrf_input["value"]
+            logger.info("CSRF token extracted.")
+
+            login_payload = {
+                "YII_CSRF_TOKEN": self.csrf_token,
+                "LoginForm[username]": settings.USERNAME,
+                "LoginForm[password]": settings.PASSWORD,
+                "LoginForm[codigoConexao]": "3.1~13,3^17,7",
+                "yt0": "Entrar",
+            }
+
+            logger.info("Sending login request...")
+            async with self.session.post(settings.LOGIN_URL, data=login_payload) as r:
+                r.raise_for_status()
+
+            logger.info("✅ Login successful!")
+            return True
+
+        except Exception as e:
+            logger.exception(f"Login failed: {e}")
+            await self.close()
+            return False
+
+    async def get_client(self) -> aiohttp.ClientSession:
+        if self.session and not self.session.closed:
+            return self.session
+        logger.warning("Session invalid or closed — re-authenticating...")
+        ok = await self.login()
+        if not ok:
+            raise RuntimeError("Unable to create authenticated session.")
+
+        return self.session
+
+    async def close(self):
+        if self.session and not self.session.closed:
+            await self.session.close()
+            logger.info("Session closed.")
