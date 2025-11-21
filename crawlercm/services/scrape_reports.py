@@ -10,6 +10,7 @@ parse numeric and date strings from the HTML tables.
 import asyncio
 from collections import defaultdict
 from datetime import date, datetime
+import base64
 from io import BytesIO
 import aiohttp
 from bs4 import BeautifulSoup
@@ -127,9 +128,7 @@ async def scrape_sales_pending_orders(
             "RelatorioPedidosPendentes[situacao]": "",
         }
         logger.info("Scraping sales pending orders...")
-        async with client.get(
-            url, headers=headers, params=params
-        ) as response:
+        async with client.get(url, headers=headers, params=params) as response:
             response.raise_for_status()
             html = await response.text()
             soup = BeautifulSoup(html, "html.parser")
@@ -212,30 +211,25 @@ async def scrape_prod_pending_orders(
             "YII_CSRF_TOKEN": yii_token,
         }
         logger.info("Scraping production pending orders...")
-        async with client.post(
-            url, headers=headers, data=data
-        ) as response:
+        async with client.post(url, headers=headers, data=data) as response:
             response.raise_for_status()
-            html = await response.text()
-            soup = BeautifulSoup(html, "html.parser")
-            table = soup.find("table", {"id": "tableExpo"})
-            trs = table.find_all("tr")[1:]
+            json = await response.json()
+            csv_bytes = base64.b64decode(json["content"])
+            df = pd.read_csv(BytesIO(csv_bytes), sep=";")
             items_found: List[PendingOrdersItem] = []
-            for tr in trs:
-                tds = tr.find_all("td")
-                if tds:
-                    item = PendingOrdersItem(
-                        op=tds[0].text.strip(),
-                        cliente=tds[1].text.strip(),
-                        codigo=tds[2].text.strip(),
-                        produto=tds[3].text.strip(),
-                        criacao=_parse_date(tds[4].text.strip()),
-                        prazo=_parse_date(tds[5].text.strip()),
-                        quantidade=_parse_int(tds[6].text.strip()),
-                        peso=_parse_float(tds[7].text.strip()),
-                        etapa=tds[8].text.strip(),
-                    )
-                    items_found.append(item)
+            for _, row in df.iterrows():
+                item = PendingOrdersItem(
+                    op=str(row["OP"]),
+                    cliente=str(row["Cliente"]),
+                    codigo=str(row["Cód. Prod"]),
+                    produto=str(row["Produto"]),
+                    criacao=_parse_date(str(row["Criação"])),
+                    prazo=_parse_date(str(row["Prazo"])),
+                    quantidade=_parse_int(str(row["Qtde"])),
+                    peso=_parse_float(str(row["Peso (kg)"])),
+                    etapa=str(row["Etapa atual"]),
+                )
+                items_found.append(item)
             logger.info(f"Pending Orders Items found: {len(items_found)}")
     except aiohttp.ClientError as e:
         logger.error(f"Error scraping production pending orders: {e}")
@@ -277,9 +271,7 @@ async def scrape_pending_materials(
             "pageSize": "20",
         }
         logger.info("Scraping pending materials")
-        async with client.get(
-            url, headers=headers, params=params
-        ) as response:
+        async with client.get(url, headers=headers, params=params) as response:
             response.raise_for_status()
             html = await response.text()
             soup = BeautifulSoup(html, "html.parser")
@@ -392,14 +384,20 @@ async def get_combined_report_data(
     """
     try:
         logger.info("Starting parallel tasks for scraping of all report sources...")
-        
+
         tasks = [
-            scrape_sales_pending_orders(client, urls["sales"], init_date_str, end_date_str),
-            scrape_prod_pending_orders(client, urls["prod"], init_date_str, end_date_str, csrf_token),
+            scrape_sales_pending_orders(
+                client, urls["sales"], init_date_str, end_date_str
+            ),
+            scrape_prod_pending_orders(
+                client, urls["prod"], init_date_str, end_date_str, csrf_token
+            ),
             scrape_pending_materials(client, urls["materials"]),
         ]
-        
-        sales_data, orders_data, materials_data = await asyncio.gather(*tasks, return_exceptions=True)
+
+        sales_data, orders_data, materials_data = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )
 
         for result in [sales_data, orders_data, materials_data]:
             if isinstance(result, Exception):
@@ -407,9 +405,9 @@ async def get_combined_report_data(
                 raise result
 
         logger.info("All scraping tasks completed successfully. Combining data...")
-        
+
         combined_list = combine_data(sales_data, orders_data, materials_data)
-        
+
         logger.info("Data combined successfully!")
     except Exception as e:
         logger.error(f"Error combining data: {e}")
