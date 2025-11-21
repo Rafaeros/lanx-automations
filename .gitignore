@@ -4,3 +4,5 @@ venv
 env
 tmp
 *.log
+crawlercm/build/
+crawlercm/dist/
