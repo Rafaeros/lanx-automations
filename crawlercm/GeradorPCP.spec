@@ -16,7 +16,9 @@ datas = [
 
 hiddenimports = (
     collect_submodules('core') +
-    collect_submodules('services')
+    collect_submodules('services') +
+    collect_submodules('pydantic') +
+    collect_submodules('pydantic_settings')
 )
 
 a = Analysis(
