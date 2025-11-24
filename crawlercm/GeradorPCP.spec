@@ -9,10 +9,9 @@ block_cipher = None
 project_path = os.path.abspath(".")
 
 datas = [
-    ('core/assets', 'core/assets'),
-    ('core/frontend/widgets', 'core/frontend/widgets'),
-    ('core/utils', 'core/utils'),
-    ('services', 'services'),
+    ('core', 'core'),                  # inclui toda a pasta core/
+    ('services', 'services'),          # inclui toda a pasta services/
+    ('.env', '.'),                     # inclui o arquivo .env na raiz
 ]
 
 hiddenimports = (
@@ -29,10 +28,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-
-    # AQUI ESTÁ O IMPORTANTE!!!
-    excludes=['PyQt5', 'PyQt6', 'PySide2'],
-
+    excludes=['PyQt5', 'PyQt6', 'PySide2'],   # remove outros frameworks Qt
     cipher=block_cipher
 )
 
