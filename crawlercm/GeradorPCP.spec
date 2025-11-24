@@ -1,5 +1,6 @@
 # GeradorPCP.spec
-# Para build: pyinstaller GeradorPCP.spec
+# Para gerar:
+#   pyinstaller GeradorPCP.spec
 
 import os
 from PyInstaller.utils.hooks import collect_submodules
@@ -7,30 +8,32 @@ from PyInstaller.utils.hooks import collect_submodules
 block_cipher = None
 
 project_path = os.path.abspath(".")
+core_path = os.path.join(project_path, "core")
+services_path = os.path.join(project_path, "services")
 
 datas = [
-    ('core', 'core'),                  # inclui toda a pasta core/
-    ('services', 'services'),          # inclui toda a pasta services/
-    ('.env', '.'),                     # inclui o arquivo .env na raiz
+    (core_path, "core"),          # inclui pasta core inteira
+    (services_path, "services"),  # inclui pasta services inteira
+    (os.path.join(project_path, ".env"), "."),  # inclui .env na raiz
 ]
 
 hiddenimports = (
-    collect_submodules('core') +
-    collect_submodules('services') +
-    collect_submodules('pydantic') +
-    collect_submodules('pydantic_settings')
+    collect_submodules("core") +
+    collect_submodules("services") +
+    collect_submodules("pydantic") +
+    collect_submodules("pydantic_settings")
 )
 
 a = Analysis(
     ['main.py'],
     pathex=[project_path],
+    binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
-    binaries=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['PyQt5', 'PyQt6', 'PySide2'],   # remove outros frameworks Qt
+    excludes=['PyQt5', 'PyQt6', 'PySide2'],  # exclui se você estiver usando PySide6
     cipher=block_cipher
 )
 
@@ -53,4 +56,5 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False
+    icon='core/assets/images/icon.ico'
 )

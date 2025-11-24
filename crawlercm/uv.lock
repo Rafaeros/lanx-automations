@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.12"
 
 [[package]]
@@ -237,6 +236,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "asyncio" },
     { name = "beautifulsoup4" },
+    { name = "certifi" },
     { name = "datetime" },
     { name = "fastapi" },
     { name = "openpyxl" },
@@ -255,6 +255,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.0" },
     { name = "asyncio", specifier = ">=4.0.0" },
     { name = "beautifulsoup4", specifier = ">=4.14.2" },
+    { name = "certifi", specifier = ">=2025.11.12" },
     { name = "datetime", specifier = ">=5.5" },
     { name = "fastapi", specifier = ">=0.119.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
@@ -852,6 +853,14 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/f4/7ab918e35f55e7beee471ba8c67dfc4c9c19a8904e4867bfda7f9c76a72e/pydantic_core-2.41.3-cp314-cp314t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:984ca0113b39dda1d7c358d6db03dd6539ef244d0558351806c1327239e035bf", size = 2041033 },
     { url = "https://files.pythonhosted.org/packages/a6/c8/5b12e5a36410ebcd0082ae5b0258150d72762e306f298cc3fe731b5574ec/pydantic_core-2.41.3-cp314-cp314t-win_amd64.whl", hash = "sha256:2a7dd8a6f5a9a2f8c7f36e4fc0982a985dbc4ac7176ee3df9f63179b7295b626", size = 1994462 },
     { url = "https://files.pythonhosted.org/packages/6b/f6/c6f3b7244a2a0524f4a04052e3d590d3be0ba82eb1a2f0fe5d068237701e/pydantic_core-2.41.3-cp314-cp314t-win_arm64.whl", hash = "sha256:b387f08b378924fa82bd86e03c9d61d6daca1a73ffb3947bdcfe12ea14c41f68", size = 1973551 },
+    { url = "https://files.pythonhosted.org/packages/80/7c/837dc1d5f09728590ace987fcaad83ec4539dcd73ce4ea5a0b786ee0a921/pydantic_core-2.41.3-graalpy311-graalpy242_311_native-macosx_10_12_x86_64.whl", hash = "sha256:98ad9402d6cc194b21adb4626ead88fcce8bc287ef434502dbb4d5b71bdb9a47", size = 2122049 },
+    { url = "https://files.pythonhosted.org/packages/00/7d/d9c6d70571219d826381049df60188777de0283d7f01077bfb7ec26cb121/pydantic_core-2.41.3-graalpy311-graalpy242_311_native-macosx_11_0_arm64.whl", hash = "sha256:539b1c01251fbc0789ad4e1dccf3e888062dd342b2796f403406855498afbc36", size = 1936957 },
+    { url = "https://files.pythonhosted.org/packages/7f/d3/5e69eba2752a47815adcf9ff7fcfdb81c600b7c87823037d8e746db835cf/pydantic_core-2.41.3-graalpy311-graalpy242_311_native-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:12019e3a4ded7c4e84b11a761be843dfa9837444a1d7f621888ad499f0f72643", size = 1957032 },
+    { url = "https://files.pythonhosted.org/packages/4c/98/799db4be56a16fb22152c5473f806c7bb818115f1648bee3ac29a7d5fb9e/pydantic_core-2.41.3-graalpy311-graalpy242_311_native-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5e01519c8322a489167abb1aceaab1a9e4c7d3e665dc3f7b0b1355910fcb698", size = 2140010 },
+    { url = "https://files.pythonhosted.org/packages/68/e6/a41dec3d50cfbd7445334459e847f97a62c5658d2c6da268886928ffd357/pydantic_core-2.41.3-graalpy312-graalpy250_312_native-macosx_10_12_x86_64.whl", hash = "sha256:a6ded5abbb7391c0db9e002aaa5f0e3a49a024b0a22e2ed09ab69087fd5ab8a8", size = 2112077 },
+    { url = "https://files.pythonhosted.org/packages/44/38/e136a52ae85265a07999439cd8dcd24ba4e83e23d61e40000cd74b426f19/pydantic_core-2.41.3-graalpy312-graalpy250_312_native-macosx_11_0_arm64.whl", hash = "sha256:43abc869cce9104ff35cb4eff3028e9a87346c95fe44e0173036bf4d782bdc3d", size = 1920464 },
+    { url = "https://files.pythonhosted.org/packages/3e/5d/a3f509f682818ded836bd006adce08d731d81c77694a26a0a1a448f3e351/pydantic_core-2.41.3-graalpy312-graalpy250_312_native-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cb3c63f4014a603caee687cd5c3c63298d2c8951b7acb2ccd0befbf2e1c0b8ad", size = 1951926 },
+    { url = "https://files.pythonhosted.org/packages/59/0e/cb30ad2a0147cc7763c0c805ee1c534f6ed5d5db7bc8cf8ebaf34b4c9dab/pydantic_core-2.41.3-graalpy312-graalpy250_312_native-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:88461e25f62e58db4d8b180e2612684f31b5844db0a8f8c1c421498c97bc197b", size = 2139233 },
 ]
 
 [[package]]
