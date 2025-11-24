@@ -78,7 +78,7 @@ async def get_sales_pending_orders(
 
         logger.info("Fetching sales pending orders...")
         report_data = await scrape_sales_pending_orders(
-            client, settings.SALES_PENDING_ORDER_URL, init_date_str, end_date_str
+            client, "https://v2.cargamaquina.com.br/relatorio/venda/renderGridExportacaoPedidosPendentes", init_date_str, end_date_str
         )
         if not report_data:
             raise HTTPException(
@@ -137,7 +137,7 @@ async def get_prod_pending_orders(
         csrf_token = request.app.state.csrf_token
         report_data = await scrape_prod_pending_orders(
             client,
-            settings.PROD_PENDING_ORDER_URL,
+            "https://v2.cargamaquina.com.br/relatorio/producao/exportarOrdensPendentesAnalitico",
             init_date_str,
             end_date_str,
             csrf_token,
@@ -178,7 +178,7 @@ async def get_pending_materials(
     try:
         logger.info("Fetching pending materials...")
         report_data = await scrape_pending_materials(
-            client, settings.PENDING_MATERIALS_URL
+            client, "https://v2.cargamaquina.com.br/pedido/exportarPedidoFaltaMP"
         )
 
         if not report_data:
@@ -230,9 +230,9 @@ async def get_filtered_sales_report(
 
         logger.info("Fetching combining sales reports...")
         urls = {
-            "sales": settings.SALES_PENDING_ORDER_URL,
-            "prod": settings.PROD_PENDING_ORDER_URL,
-            "materials": settings.PENDING_MATERIALS_URL
+            "sales": "https://v2.cargamaquina.com.br/relatorio/venda/renderGridExportacaoPedidosPendentes",
+            "prod": "https://v2.cargamaquina.com.br/relatorio/producao/exportarOrdensPendentesAnalitico",
+            "materials": "https://v2.cargamaquina.com.br/pedido/exportarPedidoFaltaMP"
         }
         csrf_token = request.app.state.csrf_token
 
@@ -283,9 +283,9 @@ async def export_filtered_sales_report(
     
     try:
         urls = {
-            "sales": settings.SALES_PENDING_ORDER_URL,
-            "prod": settings.PROD_PENDING_ORDER_URL,
-            "materials": settings.PENDING_MATERIALS_URL,
+            "sales": "https://v2.cargamaquina.com.br/relatorio/venda/renderGridExportacaoPedidosPendentes",
+            "prod": "https://v2.cargamaquina.com.br/relatorio/producao/exportarOrdensPendentesAnalitico",
+            "materials": "https://v2.cargamaquina.com.br/pedido/exportarPedidoFaltaMP",
         }
         csrf_token = request.app.state.csrf_token
         
