@@ -3,8 +3,8 @@ import aiohttp
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from bs4 import BeautifulSoup
-from core.config import settings
 from core.logger import logger
+from core.config_manager import Configs
 
 
 @asynccontextmanager
@@ -21,10 +21,16 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing aiohttp session...")
     session = aiohttp.ClientSession()
 
+    settings = Configs()
+
     try:
         # Step 1: Get CSRF Token
-        logger.info(f"Accessing {settings.LOGIN_URL} to get CSRF token...")
-        async with session.get(settings.LOGIN_URL) as response:
+        logger.info(
+            f"Accessing https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7 to get CSRF token..."
+        )
+        async with session.get(
+            "https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7"
+        ) as response:
             response.raise_for_status()
             html_content = await response.text()
 
@@ -42,14 +48,17 @@ async def lifespan(app: FastAPI):
         # Step 2: Perform login
         login_payload = {
             "YII_CSRF_TOKEN": csrf_token,
-            "LoginForm[username]": settings.USERNAME,
-            "LoginForm[password]": settings.PASSWORD,
+            "LoginForm[username]": settings.username,
+            "LoginForm[password]": settings.password,
             "LoginForm[codigoConexao]": "3.1~13,3^17,7",
             "yt0": "Entrar",
         }
 
         logger.info("Sending login request...")
-        async with session.post(settings.LOGIN_URL, data=login_payload) as response:
+        async with session.post(
+            "https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7",
+            data=login_payload,
+        ) as response:
             response.raise_for_status()
             if response.status != 200:
                 raise IOError(f"Login failed: HTTP {response.status}")
@@ -70,19 +79,28 @@ async def lifespan(app: FastAPI):
             await app.state.http_client.close()
             logger.warning("Aiohttp session closed gracefully.")
 
+
 class AuthOnCM:
     def __init__(self):
         self.session: aiohttp.ClientSession | None = None
         self.csrf_token: str | None = None
+        self.auth_config = Configs()
+        self.username = self.auth_config.username
+        self.password = self.auth_config.password
 
     async def login(self):
+        self.auth_config.load()
         logger.info("Starting aiohttp session...")
         self.session = aiohttp.ClientSession()
 
         try:
-            logger.info(f"Getting CSRF from {settings.LOGIN_URL} ...")
+            logger.info(
+                f"Getting CSRF from {"https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7"} ..."
+            )
 
-            async with self.session.get(settings.LOGIN_URL) as r:
+            async with self.session.get(
+                "https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7"
+            ) as r:
                 r.raise_for_status()
                 html = await r.text()
 
@@ -97,14 +115,17 @@ class AuthOnCM:
 
             login_payload = {
                 "YII_CSRF_TOKEN": self.csrf_token,
-                "LoginForm[username]": settings.USERNAME,
-                "LoginForm[password]": settings.PASSWORD,
+                "LoginForm[username]": self.username,
+                "LoginForm[password]": self.password,
                 "LoginForm[codigoConexao]": "3.1~13,3^17,7",
                 "yt0": "Entrar",
             }
 
             logger.info("Sending login request...")
-            async with self.session.post(settings.LOGIN_URL, data=login_payload) as r:
+            async with self.session.post(
+                "https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7",
+                data=login_payload,
+            ) as r:
                 r.raise_for_status()
 
             logger.info("✅ Login successful!")
