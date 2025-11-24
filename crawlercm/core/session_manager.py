@@ -1,10 +1,13 @@
+from datetime import date, datetime
 import sys
+from typing import List, Optional
 import aiohttp
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from bs4 import BeautifulSoup
 from core.logger import logger
 from core.config_manager import Configs
+from schemas.reports_schemas import SalesReportItem
 
 
 @asynccontextmanager
@@ -85,6 +88,8 @@ class AuthOnCM:
         self.session: aiohttp.ClientSession | None = None
         self.csrf_token: str | None = None
         self.auth_config = Configs()
+        self.base_url = ""
+        self.login_code_url = ""
         self.username = self.auth_config.username
         self.password = self.auth_config.password
 
@@ -94,14 +99,15 @@ class AuthOnCM:
         self.session = aiohttp.ClientSession()
 
         try:
-            logger.info(
-                f"Getting CSRF from {"https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7"} ..."
-            )
+            logger.info(f"Getting CSRF from https://lanx.cargamaquina.com.br/ ...")
 
             async with self.session.get(
-                "https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7"
+                "https://lanx.cargamaquina.com.br/", allow_redirects=True
             ) as r:
                 r.raise_for_status()
+                final_url: str = str(r.url)
+                self.base_url = final_url.split("/site")[0]
+                self.login_code_url = final_url.split("/c/")[-1]
                 html = await r.text()
 
             soup = BeautifulSoup(html, "html.parser")
@@ -117,13 +123,13 @@ class AuthOnCM:
                 "YII_CSRF_TOKEN": self.csrf_token,
                 "LoginForm[username]": self.username,
                 "LoginForm[password]": self.password,
-                "LoginForm[codigoConexao]": "3.1~13,3^17,7",
+                "LoginForm[codigoConexao]": f"{self.login_code_url}",
                 "yt0": "Entrar",
             }
 
             logger.info("Sending login request...")
             async with self.session.post(
-                "https://v2.cargamaquina.com.br/site/login/c/3.1~13,3%5e17,7",
+                f"{self.base_url}/site/login/c/{self.login_code_url}",
                 data=login_payload,
             ) as r:
                 r.raise_for_status()

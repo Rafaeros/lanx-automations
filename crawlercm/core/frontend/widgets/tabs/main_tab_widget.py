@@ -41,6 +41,7 @@ class MainTab(QWidget):
 
     @asyncSlot()
     async def generate_report(self):
+        client = await self.auth.get_client()
         today: dt = dt.now()
         output_path: str = (
             f"./tmp/reports/Relatório Carteira - {today.strftime('%d-%m-%Y')}.xlsx"
@@ -49,12 +50,11 @@ class MainTab(QWidget):
 
         dates = await self.date_widget.get_dates()
         urls = {
-            "sales": "https://v2.cargamaquina.com.br/relatorio/venda/renderGridExportacaoPedidosPendentes",
-            "prod": "https://v2.cargamaquina.com.br/relatorio/producao/exportarOrdensPendentesAnalitico",
-            "materials": "https://v2.cargamaquina.com.br/pedido/exportarPedidoFaltaMP",
+            "sales": f"{self.auth.base_url}/relatorio/venda/renderGridExportacaoPedidosPendentes",
+            "prod": f"{self.auth.base_url}/relatorio/producao/exportarOrdensPendentesAnalitico",
+            "materials": f"{self.auth.base_url}/pedido/exportarPedidoFaltaMP",
         }
 
-        client = await self.auth.get_client()
         items = await get_combined_report_data(
             client, urls, dates[0], dates[1], self.auth.csrf_token
         )
