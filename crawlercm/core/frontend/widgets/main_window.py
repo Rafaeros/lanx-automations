@@ -1,16 +1,12 @@
 import asyncio
-import logging
-import pathlib
-import pandas as pd
-from io import BytesIO
+import os
+import sys
 from qasync import asyncSlot
-from datetime import datetime as dt
-
 from PySide6 import QtCore
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QMainWindow,
     QTabWidget,
-    QWidget,
 )
 
 from core.config_manager import Configs
@@ -21,6 +17,12 @@ from core.session_manager import AuthOnCM
 TMP_PATH = "tmp/reports"
 
 
+def resource_path(relative_path: str) -> str:
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -29,6 +31,7 @@ class MainWindow(QMainWindow):
         self.setContentsMargins(0, 0, 0, 0)
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Gerador de Carteira PCP V1.0")
+        self.setWindowIcon(QIcon(resource_path("core/assets/images/icon.png")))
         QtCore.QTimer.singleShot(0, self.setup_ui)
 
     def closeEvent(self, event):

@@ -1,13 +1,12 @@
-from datetime import date, datetime
+import ssl
 import sys
-from typing import List, Optional
 import aiohttp
 from contextlib import asynccontextmanager
+import certifi
 from fastapi import FastAPI
 from bs4 import BeautifulSoup
 from core.logger import logger
 from core.config_manager import Configs
-from schemas.reports_schemas import SalesReportItem
 
 
 @asynccontextmanager
@@ -96,8 +95,14 @@ class AuthOnCM:
     async def login(self):
         self.auth_config.load()
         logger.info("Starting aiohttp session...")
-        self.session = aiohttp.ClientSession()
-
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        self.session = aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=ssl_context),
+            cookie_jar=aiohttp.CookieJar(unsafe=True),
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; aiohttp-client)"
+            }
+        )
         try:
             logger.info(f"Getting CSRF from https://lanx.cargamaquina.com.br/ ...")
 
