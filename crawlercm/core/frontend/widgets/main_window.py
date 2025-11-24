@@ -1,6 +1,9 @@
-from io import BytesIO
+import asyncio
 import logging
 import pandas as pd
+from io import BytesIO
+import pathlib
+from datetime import datetime as dt
 from qasync import asyncSlot
 from PySide6 import QtWidgets, QtGui, QtCore
 from core.logger import logger
@@ -12,9 +15,12 @@ from core.config import settings
 from core.utils.format_excel import format_data_for_excel
 from services.scrape_reports import get_combined_report_data
 
+TMP_PATH = "tmp/reports"
 
 class MainWindow(QtWidgets.QWidget):
-    def __init__(self, auth: AuthOnCM, settings=settings, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self, auth: AuthOnCM, settings=settings, parent: QtWidgets.QWidget | None = None
+    ):
         super().__init__()
         self.auth = auth
         self.settings = settings
@@ -22,7 +28,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Gerador de Carteira PCP V1.0")
         QtCore.QTimer.singleShot(0, self._init_login)
 
-    
     @asyncSlot()
     async def _init_login(self):
         logged = await self.auth.login()
@@ -56,19 +61,30 @@ class MainWindow(QtWidgets.QWidget):
         self.main_layout.addWidget(self.terminal)
         self.splash.finish(self)
 
+    def closeEvent(self, event):
+        asyncio.create_task(self.auth.close())
+        event.accept()
+
     @asyncSlot()
     async def generate_report(self):
+        today: dt = dt.now()
+        output_path: str = f"./tmp/reports/Relatório Carteira - {today.strftime('%d-%m-%Y')}.xlsx"
+        pathlib.Path(f"tmp/reports").mkdir(parents=True, exist_ok=True)
+
         dates = await self.date_widget.get_dates()
         urls = {
             "sales": settings.SALES_PENDING_ORDER_URL,
             "prod": settings.PROD_PENDING_ORDER_URL,
             "materials": settings.PENDING_MATERIALS_URL,
         }
+
         client = await self.auth.get_client()
-        items = await get_combined_report_data(client, urls, dates[0], dates[1], self.auth.csrf_token)
+        items = await get_combined_report_data(
+            client, urls, dates[0], dates[1], self.auth.csrf_token
+        )
         items_bytes = format_data_for_excel(items)
         df = pd.read_excel(BytesIO(items_bytes))
-        df.to_excel("report.xlsx", index=False)
+        df.to_excel(output_path, index=False, sheet_name="Relatório")
         QtWidgets.QMessageBox.information(
-            self, "Relatório gerado", "Relatório gerado com sucesso em report.xlsx"
+            self, "Relatório gerado", f"Relatório gerado com sucesso em {output_path}.xlsx"
         )
