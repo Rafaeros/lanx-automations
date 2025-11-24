@@ -3,6 +3,7 @@ __pycache__
 venv
 env
 tmp
+*.json
 *.log
 crawlercm/build/
 crawlercm/dist/
