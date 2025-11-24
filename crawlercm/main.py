@@ -5,13 +5,15 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 from qasync import QEventLoop
 
-from core.frontend.widgets.main_window import MainWindow
 from core.logger import logger
+from core.frontend.widgets.main_window import MainWindow
+from core.frontend.widgets.tabs.main_tab_widget import resource_path
+
 
 
 def main():
     app = QApplication(sys.argv)
-    theme_path = Path("./core/frontend/theme.qss")
+    theme_path = Path(resource_path("core/frontend/theme.qss"))
 
     if theme_path.exists():
         qss = theme_path.read_text(encoding="utf-8")
