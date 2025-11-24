@@ -1,15 +1,18 @@
 import logging
+import os
 import pathlib
-import pandas as pd
+import sys
 from qasync import asyncSlot
 from datetime import datetime as dt
-from io import BytesIO
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QPushButton,
     QMessageBox,
+    QLabel,
 )
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt
 from core.logger import logger
 from core.qt_logger_handler import QtLogHandler
 from core.frontend.widgets.date_widget import DateSelectWidget
@@ -19,17 +22,28 @@ from services.scrape_reports import get_combined_report_data
 from core.utils.format_excel import format_data_for_excel
 
 
+def resource_path(relative_path: str) -> str:
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
 class MainTab(QWidget):
     def __init__(self, auth: AuthOnCM, parent: QWidget | None = None):
         super().__init__(parent)
         self.auth = auth
         self.main_layout = QVBoxLayout(self)
+
+        # Widget
         self.date_widget = DateSelectWidget(self)
-        self.main_layout.addWidget(self.date_widget)
+        self.terminal = TerminalWidget(self)
+
+        self.logo = QLabel()
+        pixmap = QPixmap(resource_path("core/assets/images/splash-wbg.png"))
+        self.logo.setPixmap(pixmap.scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         btn = QPushButton("Gerar relatório")
         btn.clicked.connect(self.generate_report)
-        self.main_layout.addWidget(btn)
-        self.terminal = TerminalWidget(self)
+
+        # Logger
         qt_handler = QtLogHandler()
         qt_handler.setFormatter(
             logging.Formatter("%(asctime)s [%(levelname)s]: %(message)s")
@@ -37,6 +51,12 @@ class MainTab(QWidget):
         qt_handler.emitter.log_signal.connect(self.terminal.write)
 
         logger.addHandler(qt_handler)
+
+        # Layout
+        self.main_layout.addWidget(self.logo)
+        self.main_layout.addSpacing(25)
+        self.main_layout.addWidget(self.date_widget)
+        self.main_layout.addWidget(btn)
         self.main_layout.addWidget(self.terminal)
 
     @asyncSlot()

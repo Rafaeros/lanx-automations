@@ -7,7 +7,7 @@ from qasync import asyncSlot
 class DateSelectWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        date_layout = QVBoxLayout(self)
+        date_layout = QHBoxLayout(self)
         date_layout.setContentsMargins(0, 0, 0, 0)
         date_layout.setSpacing(20)
 
@@ -21,7 +21,6 @@ class DateSelectWidget(QtWidgets.QWidget):
         self.init_date.setDate(QDate.currentDate())
         init_container.addWidget(self.init_date_label)
         init_container.addWidget(self.init_date)
-        init_container.addStretch(0)
 
         # EndDate
         end_container = QHBoxLayout()
@@ -33,12 +32,12 @@ class DateSelectWidget(QtWidgets.QWidget):
         self.end_date.setDate(QDate.currentDate().addMonths(3))
         end_container.addWidget(self.end_date_label)
         end_container.addWidget(self.end_date)
-        end_container.addStretch(0)
 
         # Layout
         date_layout.addLayout(init_container)
         date_layout.addLayout(end_container)
-        date_layout.addStretch()
+        date_layout.addStretch(1)
+
 
     @asyncSlot()
     async def get_dates(self):
