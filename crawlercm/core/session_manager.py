@@ -93,7 +93,6 @@ class AuthOnCM:
         self.password = self.auth_config.password
 
     async def login(self):
-        self.auth_config.load()
         logger.info("Starting aiohttp session...")
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         self.session = aiohttp.ClientSession(
@@ -101,7 +100,7 @@ class AuthOnCM:
             cookie_jar=aiohttp.CookieJar(unsafe=True),
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; aiohttp-client)"
-            }
+            },
         )
         try:
             logger.info(f"Getting CSRF from https://lanx.cargamaquina.com.br/ ...")
@@ -111,6 +110,7 @@ class AuthOnCM:
             ) as r:
                 r.raise_for_status()
                 final_url: str = str(r.url)
+                logger.info(f"Redirecting to {final_url}...")
                 self.base_url = final_url.split("/site")[0]
                 self.login_code_url = final_url.split("/c/")[-1]
                 html = await r.text()
@@ -132,7 +132,9 @@ class AuthOnCM:
                 "yt0": "Entrar",
             }
 
-            logger.info("Sending login request...")
+            logger.info(
+                f"Sending login request to {self.base_url}/site/login/c/{self.login_code_url}..."
+            )
             async with self.session.post(
                 f"{self.base_url}/site/login/c/{self.login_code_url}",
                 data=login_payload,
@@ -148,6 +150,7 @@ class AuthOnCM:
             return False
 
     async def get_client(self) -> aiohttp.ClientSession:
+        self.auth_config.load()
         if self.session and not self.session.closed:
             return self.session
         logger.warning("Session invalid or closed — re-authenticating...")
