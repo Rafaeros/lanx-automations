@@ -59,10 +59,17 @@ class MainTab(QWidget):
             client, urls, dates[0], dates[1], self.auth.csrf_token
         )
         items_bytes = format_data_for_excel(items)
-        df = pd.read_excel(BytesIO(items_bytes))
-        df.to_excel(output_path, index=False, sheet_name="Relatório")
-        QMessageBox.information(
-            self,
-            "Relatório gerado",
-            f"Relatório gerado com sucesso em {output_path}.xlsx",
-        )
+        try:
+            with open(output_path, 'wb') as f:
+                f.write(items_bytes)
+            QMessageBox.information(
+                self,
+                "Relatório gerado",
+                f"Relatório gerado com sucesso em {output_path}",
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Erro ao Salvar",
+                f"Ocorreu um erro ao salvar o arquivo: {e}",
+            )
