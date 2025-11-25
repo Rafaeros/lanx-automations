@@ -165,12 +165,19 @@ async def scrape_sales_pending_orders(
                     )
                     items_found.append(item)
             logger.info(f"Pendind Sales Items found: {len(items_found)}")
+
+            return items_found
+    except aiohttp.ClientConnectorSSLError as e:
+        logger.error(f"SSL Connector Error: {e}")
+
+    except aiohttp.InvalidUrlRedirectClientError as e:
+        logger.error(f"Invalid redirected url: {e}")
+        return []    
+    
     except aiohttp.ClientError as e:
         logger.error(f"Error scraping sales pending orders: {e}")
         return []
-
-    return items_found
-
+    
 
 async def scrape_prod_pending_orders(
     client: aiohttp.ClientSession,

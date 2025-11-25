@@ -61,25 +61,25 @@ class MainTab(QWidget):
 
     @asyncSlot()
     async def generate_report(self):
-        client = await self.auth.get_client()
-        today: dt = dt.now()
-        output_path: str = (
-            f"./tmp/reports/Relatório Carteira - {today.strftime('%d-%m-%Y')}.xlsx"
-        )
-        pathlib.Path(f"tmp/reports").mkdir(parents=True, exist_ok=True)
-
-        dates = await self.date_widget.get_dates()
-        urls = {
-            "sales": f"{self.auth.base_url}/relatorio/venda/renderGridExportacaoPedidosPendentes",
-            "prod": f"{self.auth.base_url}/relatorio/producao/exportarOrdensPendentesAnalitico",
-            "materials": f"{self.auth.base_url}/pedido/exportarPedidoFaltaMP",
-        }
-
-        items = await get_combined_report_data(
-            client, urls, dates[0], dates[1], self.auth.csrf_token
-        )
-        items_bytes = format_data_for_excel(items)
         try:
+            client = await self.auth.get_client()
+            today: dt = dt.now()
+            output_path: str = (
+                f"./tmp/reports/Relatório Carteira - {today.strftime('%d-%m-%Y')}.xlsx"
+            )
+            pathlib.Path(f"tmp/reports").mkdir(parents=True, exist_ok=True)
+
+            dates = await self.date_widget.get_dates()
+            urls = {
+                "sales": f"{self.auth.base_url}/relatorio/venda/renderGridExportacaoPedidosPendentes",
+                "prod": f"{self.auth.base_url}/relatorio/producao/exportarOrdensPendentesAnalitico",
+                "materials": f"{self.auth.base_url}/pedido/exportarPedidoFaltaMP",
+            }
+
+            items = await get_combined_report_data(
+                client, urls, dates[0], dates[1], self.auth.csrf_token
+            )
+            items_bytes = format_data_for_excel(items)
             with open(output_path, 'wb') as f:
                 f.write(items_bytes)
             QMessageBox.information(
@@ -87,6 +87,13 @@ class MainTab(QWidget):
                 "Relatório gerado",
                 f"Relatório gerado com sucesso em {output_path}",
             )
+        except BufferError as e:
+            QMessageBox.critical(
+                self,
+                "Erro ao Salvar",
+                f"Ocorreu um erro ao salvar o arquivo: {e}",
+            )
+
         except Exception as e:
             QMessageBox.critical(
                 self,
