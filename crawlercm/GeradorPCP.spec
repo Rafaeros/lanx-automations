@@ -21,7 +21,8 @@ hiddenimports = (
     collect_submodules("core") +
     collect_submodules("services") +
     collect_submodules("pydantic") +
-    collect_submodules("pydantic_settings")
+    collect_submodules("pydantic_settings") +
+    collect_submodules("xlsxwriter")
 )
 
 a = Analysis(
