@@ -1,9 +1,10 @@
 # GeradorPCP.spec
-# Para gerar:
+# Para gerar o executável:
 #   pyinstaller GeradorPCP.spec
 
 import os
 from PyInstaller.utils.hooks import collect_submodules
+import xlsxwriter
 
 block_cipher = None
 
@@ -11,10 +12,13 @@ project_path = os.path.abspath(".")
 core_path = os.path.join(project_path, "core")
 services_path = os.path.join(project_path, "services")
 
+xlsxwriter_path = os.path.dirname(xlsxwriter.__file__)
+
 datas = [
-    (core_path, "core"),          # inclui pasta core inteira
-    (services_path, "services"),  # inclui pasta services inteira
-    (os.path.join(project_path, ".env"), "."),  # inclui .env na raiz
+    (core_path, "core"),
+    (services_path, "services"),
+    (os.path.join(project_path, ".env"), "."),
+    (xlsxwriter_path, "xlsxwriter"),  # include entire xlsxwriter package
 ]
 
 hiddenimports = (
@@ -34,7 +38,11 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['PyQt5', 'PyQt6', 'PySide2'],  # exclui se você estiver usando PySide6
+    excludes=[
+        'PyQt5', 
+        'PyQt6', 
+        'PySide2'
+    ],  # evitando conflitos com PySide6
     cipher=block_cipher
 )
 
@@ -59,3 +67,4 @@ exe = EXE(
     console=False,
     icon='core/assets/images/icon.ico'
 )
+
