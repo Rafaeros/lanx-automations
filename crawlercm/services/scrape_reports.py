@@ -11,6 +11,7 @@ import asyncio
 from collections import defaultdict
 from datetime import date, datetime
 import base64
+import urllib
 from io import BytesIO
 import aiohttp
 from bs4 import BeautifulSoup
@@ -184,65 +185,49 @@ async def scrape_prod_pending_orders(
     url: str,
     init_date: str,
     end_date: str,
-    yii_token: str,
 ) -> List[PendingOrdersItem]:
     """
-    Scrape the production pending orders report from the CM system.
-
-    Args:
-        client (aiohttp.ClientSession): Authenticated aiohttp client session.
-        url (str): URL of the production pending orders report.
-        init_date (str): Start date in "DD/MM/YYYY" format.
-        end_date (str): End date in "DD/MM/YYYY" format.
-        yii_token (str): CSRF token required for POST requests.
-
-    Returns:
-        List[PendingOrdersItem]: List of parsed production pending orders.
-
-    Raises:
-        aiohttp.ClientError: If the HTTP request fails.
+    Baixa o CSV diretamente da nova URL pública da exportação.
+    Agora usa GET com query params (em vez de POST+JSON).
     """
+
+    params = {
+        "dataInicio": init_date,
+        "dataFim": end_date,
+    }
+
+    url = f"{url}?{urllib.parse.urlencode(params)}"
+
     try:
-        headers = {
-            "User-Agent": "...",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-CSRF-Token": yii_token,
-            "X-Requested-With": "XMLHttpRequest",
-            "Referer": "https://app.cargamaquina.com.br/analitico/producao/ordensPendentes",
-        }
+        logger.info("Downloading production pending orders CSV (new endpoint)...")
 
-        data = {
-            "dataInicio": init_date,
-            "dataFim": end_date,
-            "clienteId": "",
-            "YII_CSRF_TOKEN": yii_token,
-        }
-        logger.info("Scraping production pending orders...")
-        async with client.post(url, headers=headers, data=data) as response:
+        async with client.get(url, params=params) as response:
             response.raise_for_status()
-            json = await response.json()
-            csv_bytes = base64.b64decode(json["content"])
-            df = pd.read_csv(BytesIO(csv_bytes), sep=";")
-            items_found: List[PendingOrdersItem] = []
-            for _, row in df.iterrows():
-                item = PendingOrdersItem(
-                    op=str(row["OP"]),
-                    cliente=str(row["Cliente"]),
-                    codigo=str(row["Cód. Prod"]),
-                    produto=str(row["Produto"]),
-                    criacao=_parse_date(str(row["Criação"])),
-                    prazo=_parse_date(str(row["Prazo"])),
-                    quantidade=_parse_int(str(row["Qtde"])),
-                    peso=_parse_float(str(row["Peso (kg)"])),
-                    etapa=str(row["Etapa atual"]),
-                )
-                items_found.append(item)
-            logger.info(f"Pending Orders Items found: {len(items_found)}")
-    except aiohttp.ClientError as e:
-        logger.error(f"Error scraping production pending orders: {e}")
-        return []
+            csv_bytes = await response.read()
 
-    return items_found
+        df = pd.read_csv(BytesIO(csv_bytes), sep=";")
+
+        items_found: List[PendingOrdersItem] = []
+        for _, row in df.iterrows():
+            item = PendingOrdersItem(
+                op=str(row["OP"]),
+                cliente=str(row["Cliente"]),
+                codigo=str(row["Cód. Prod"]),
+                produto=str(row["Produto"]),
+                criacao=_parse_date(str(row["Criação"])),
+                prazo=_parse_date(str(row["Prazo"])),
+                quantidade=_parse_int(str(row["Qtde"])),
+                peso=_parse_float(str(row["Peso (kg)"])),
+                etapa=str(row["Etapa atual"]),
+            )
+            items_found.append(item)
+
+        logger.info(f"Pending Orders Items found: {len(items_found)}")
+        return items_found
+
+    except Exception as e:
+        logger.error(f"Error scraping pending orders CSV: {e}")
+        return []
 
 
 async def scrape_pending_materials(
