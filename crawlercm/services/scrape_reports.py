@@ -382,7 +382,7 @@ async def get_combined_report_data(
                 client, urls["sales"], init_date_str, end_date_str
             ),
             scrape_prod_pending_orders(
-                client, urls["prod"], init_date_str, end_date_str, csrf_token
+                client, urls["prod"], init_date_str, end_date_str
             ),
             scrape_pending_materials(client, urls["materials"]),
         ]
