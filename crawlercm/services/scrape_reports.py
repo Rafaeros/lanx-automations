@@ -324,7 +324,7 @@ def combine_data(
         for sales_item in sales_reports:
             current_op = sales_item.op
             matching_order = orders_map.get(current_op)
-            etapa_producao = matching_order.etapa if matching_order else "N/A"
+            etapa_producao = matching_order.etapa if matching_order else "A FATURAR"
             matching_materials = materials_map.get(current_op, [])
 
             filtered_item = FilteredSalesReportItem(
