@@ -23,7 +23,7 @@ class DateSelectWidget(QWidget):
         self.init_date.setStyleSheet("font-size: 14px;")
         self.init_date.setDisplayFormat("dd/MM/yyyy")
         self.init_date.setCalendarPopup(True)
-        self.init_date.setDate(QDate.currentDate())
+        self.init_date.setDate(QDate.currentDate().addDays(-15))
         init_container.addWidget(self.init_date_label)
         init_container.addWidget(self.init_date)
 
