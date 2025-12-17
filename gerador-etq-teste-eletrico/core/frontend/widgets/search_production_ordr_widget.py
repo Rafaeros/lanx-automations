@@ -22,6 +22,7 @@ class SearchProductOrderWidget(QWidget):
 
         self.search_label = QLabel("Ordem de Produção")
         self.search_input = QLineEdit(placeholderText="Número da Ordem Ex: 2580")
+        self.search_input.returnPressed.connect(self.search_order)
         self.search_btn = QPushButton("Buscar")
         self.search_btn.clicked.connect(self.search_order)
         self.product_input = QLineEdit(placeholderText="Codigo do Produto", readOnly=True)
