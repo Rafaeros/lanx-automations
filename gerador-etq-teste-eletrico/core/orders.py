@@ -1,16 +1,30 @@
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime as dt
 from typing import List, Dict
+
+from core.utils.path_utils import resource_path
+
+ORDER_PATH = "tmp/reports/"
 
 
 @dataclass
 class Order:
-    deliver_date: datetime
+    deliver_date: dt.date
     code: int
     product: str
     description: str
     quantity: int
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(
+            deliver_date=dt.strptime(data["deliver_date"], "%Y-%m-%d %H:%M:%S"),
+            code=int(data["code"]),
+            product=data["product"],
+            description=data["description"],
+            quantity=int(data["quantity"]),
+        )
 
     def to_dict(self):
         return {
@@ -28,7 +42,7 @@ class OrderList:
 
     def create_order(
         self,
-        deliver_date: datetime,
+        deliver_date: dt.date,
         code: int,
         product: str,
         description: str,
@@ -53,4 +67,18 @@ class OrderList:
 
 class OrderManager:
     def __init__(self):
-        self.orders = ""
+        super().__init__()
+
+
+    def get_order_by_code(self, code: int) -> Order | None:
+        now = dt.now().strftime("%d-%m-%Y")
+        file_path = resource_path(f"{ORDER_PATH}{now}_orders.json")
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        order_data = data.get(str(code))
+        if not order_data:
+            return None
+
+        return Order.from_dict(order_data)

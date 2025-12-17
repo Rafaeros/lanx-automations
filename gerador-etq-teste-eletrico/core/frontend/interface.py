@@ -50,8 +50,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Erro", "Credenciais não fornecidas.")
                 return
 
-        # await self.auth.login()
-        # await self.auth.get_orders()
+        #await self.auth.login()
+        #await self.auth.get_orders()
 
         self.tabs.addTab(MainTab(self.configs), "Principal")
         self.tabs.addTab(AddOperatorTab(self.configs), "Adicionar Operador")
