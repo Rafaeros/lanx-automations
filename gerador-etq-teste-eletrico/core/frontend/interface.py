@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QDialog
 
 from core.configs import Configs
 from core.frontend.tabs.configs_tab import ConfigsTab
+from core.orders import OrderManager
 from core.session_manager import AuthOnCM
 from core.utils.path_utils import resource_path
 from core.frontend.tabs.add_operator_tab import AddOperatorTab
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
         self.auth = AuthOnCM()
         self.configs = Configs()
         self.printer = PrinterManager()
+        self.order_manager = OrderManager()
         self.setContentsMargins(0, 0, 0, 0)
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Gerador de Etiqueta Teste Elétrico V1.0")
@@ -49,9 +51,10 @@ class MainWindow(QMainWindow):
             if result != QDialog.Accepted:
                 QMessageBox.critical(self, "Erro", "Credenciais não fornecidas.")
                 return
-
-        #await self.auth.login()
-        #await self.auth.get_orders()
+        
+        if self.order_manager.file_path is None:
+            await self.auth.login()
+            await self.auth.get_orders()
 
         self.tabs.addTab(MainTab(self.configs), "Principal")
         self.tabs.addTab(AddOperatorTab(self.configs), "Adicionar Operador")

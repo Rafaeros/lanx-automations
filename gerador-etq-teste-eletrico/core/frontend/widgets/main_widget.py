@@ -16,4 +16,3 @@ class MainWidget(QWidget):
         self.main_layout.addWidget(self.search_product_order_widget)
         self.main_layout.addStretch(1)
         self.setLayout(self.main_layout)
-    

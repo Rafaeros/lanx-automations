@@ -28,6 +28,7 @@ class SearchProductOrderWidget(QWidget):
         self.product_input = QLineEdit(placeholderText="Codigo do Produto", readOnly=True)
         self.quantity_input = QLineEdit(placeholderText="Quantidade")
         self.description_input = QLineEdit(placeholderText="Descrição", readOnly=True)
+        self.generate_label_btn = QPushButton("Gerar Etiqueta")
 
         search_layout.addWidget(self.search_input)
         search_layout.addWidget(self.search_btn)

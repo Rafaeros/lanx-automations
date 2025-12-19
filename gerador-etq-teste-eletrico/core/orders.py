@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime as dt
+import os
 from typing import List, Dict
 
 from core.utils.path_utils import resource_path
@@ -67,14 +68,21 @@ class OrderList:
 
 class OrderManager:
     def __init__(self):
-        super().__init__()
+        now = dt.now().strftime("%d-%m-%Y")
+        if os.path.exists(resource_path(f"{ORDER_PATH}{now}_orders.json")):
+            self.file_path = resource_path(f"{ORDER_PATH}{now}_orders.json")
+        else:
+            self.file_path = None
 
 
     def get_order_by_code(self, code: int) -> Order | None:
         now = dt.now().strftime("%d-%m-%Y")
-        file_path = resource_path(f"{ORDER_PATH}{now}_orders.json")
+        self.file_path = resource_path(f"{ORDER_PATH}{now}_orders.json")
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        if not os.path.exists(self.file_path):
+            return None
+
+        with open(self.file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         order_data = data.get(str(code))
