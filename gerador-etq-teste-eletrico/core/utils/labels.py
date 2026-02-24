@@ -7,6 +7,7 @@ from reportlab.graphics.shapes import Drawing
 PAGE_W = 85 * mm
 PAGE_H = 45 * mm
 SOFT_BLACK = CMYKColor(0, 0, 0, 0.80)
+LABEL_PATH = "./tmp/etiqueta_85x45.pdf"
 
 
 def generate_label(
@@ -16,9 +17,9 @@ def generate_label(
     description: str,
     date: str,
     hour: str,
-):
+) -> str:
     qr_data = f"{code};{product};{date.replace('/', '-')};{hour}"
-    c = canvas.Canvas("etiqueta_85x45.pdf", pagesize=(PAGE_W, PAGE_H))
+    c = canvas.Canvas(LABEL_PATH, pagesize=(PAGE_W, PAGE_H))
     c.setFillColor(SOFT_BLACK)
     c.setFont("Helvetica-Bold", 8)
     c.drawString(5 * mm, 31 * mm, "CODIGO:")
@@ -68,6 +69,7 @@ def generate_label(
     drawing.drawOn(c, x_qr, y_qr)
     c.showPage()
     c.save()
+    return LABEL_PATH
 
 if __name__ == "__main__":
     generate_label("3214", "MWM034 000 000", "LUCIA", "(970000770366)", "18/12/2025", "11:00")

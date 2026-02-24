@@ -3,11 +3,12 @@ import subprocess
 import tempfile
 import os
 
-# Windows-only
 try:
-    import win32print # type: ignore
-except:
+    import win32print
+    import win32api
+except ImportError:
     win32print = None
+    win32api = None
 
 
 class PrinterManager:
@@ -42,11 +43,15 @@ class PrinterManager:
         try:
             result = subprocess.check_output(["lpstat", "-a"], text=True)
             return [line.split()[0] for line in result.splitlines()]
-        except:
+        except Exception:
             return []
 
     def find_printer(self, name_contains: str):
         name_contains = name_contains.lower()
+        for p in self.list_printers():
+            if name_contains == p.lower():
+                return p
+
         for p in self.list_printers():
             if name_contains in p.lower():
                 return p
@@ -84,17 +89,46 @@ class PrinterManager:
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
         tmp.write(text.encode("utf-8"))
         tmp.close()
-
         try:
             subprocess.run(["lp", "-d", printer_name, tmp.name], check=True)
         finally:
             os.unlink(tmp.name)
-
         return True
 
+    def print_pdf(self, printer_name: str, pdf_path: str, copies: int = 1):
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"O arquivo PDF '{pdf_path}' não foi encontrado.")
 
-if __name__ == "__main__":
-    pm = PrinterManager()
-    print(pm.list_printers())
-    printer_name = pm.find_printer("ZTC")
-    print(pm.print_text(printer_name, "Teste"))
+        real_printer = self.find_printer(printer_name)
+        if not real_printer:
+            raise RuntimeError(
+                f"Impressora '{printer_name}' não encontrada no sistema."
+            )
+
+        if self.is_windows():
+            return self._print_pdf_windows(real_printer, pdf_path, copies)
+        elif self.is_linux():
+            return self._print_pdf_linux(real_printer, pdf_path, copies)
+
+        raise RuntimeError("Sistema operacional não suportado.")
+
+    def _print_pdf_windows(self, printer_name, pdf_path, copies):
+        if not win32api:
+            raise RuntimeError("win32api não instalado.")
+        try:
+            for _ in range(copies):
+                win32api.ShellExecute(
+                    0, "printto", pdf_path, f'"{printer_name}"', ".", 0
+                )
+            return True
+        except Exception as e:
+            raise RuntimeError(f"Erro ao tentar imprimir PDF no Windows: {e}")
+
+    def _print_pdf_linux(self, printer_name, pdf_path, copies):
+        try:
+            subprocess.run(
+                ["lp", "-d", printer_name, "-n", str(copies), pdf_path], check=True
+            )
+            return True
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Erro ao tentar imprimir PDF no Linux: {e}")

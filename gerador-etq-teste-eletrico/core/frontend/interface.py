@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
             await self.auth.login()
             await self.auth.get_orders()
 
-        self.tabs.addTab(MainTab(self.configs), "Principal")
+        self.tabs.addTab(MainTab(self.configs, self.printer), "Principal")
         self.tabs.addTab(AddOperatorTab(self.configs), "Adicionar Operador")
         self.tabs.addTab(ConfigsTab(self.configs, self.printer), "Configurações")
         self.tabs.setCurrentIndex(0)
