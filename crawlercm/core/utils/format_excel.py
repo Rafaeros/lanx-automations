@@ -7,81 +7,130 @@ from schemas.reports_schemas import FilteredSalesReportItem
 def format_data_for_excel(report_data: List[FilteredSalesReportItem]) -> bytes:
     """
     Converte a lista de dados consolidados em um DataFrame do Pandas,
-    formatando colunas complexas para melhor visualização no Excel.
+    formatando com cores alternadas, bordas restritas aos dados e 
+    alinhamentos personalizados.
     """
-    if not report_data:
-        return pd.DataFrame()
-
     header_mapping = {
         "negociacao": "Negociação",
         "pedido_cliente": "Pedido do Cliente",
-        "op": "Ordem de Produção (OP)",
+        "op": "Ordem",
         "tipo_servico": "Tipo de Serviço",
-        "numero_projeto": "Nº do Projeto",
-        "codigo": "Código do Produto",
-        "produto": "Descrição do Produto",
-        "previsao": "Previsão de Entrega",
-        "qtde_pendente": "Qtde. Pendente",
-        "valor_unitario": "Valor Unitário (R$)",
-        "ipi": "IPI (%)",
+        "cliente": "Cliente",
+        "codigo": "Código",
+        "produto": "Descrição",
+        "previsao": "Previsão",
+        "qtde_pendente": "Pendente",
         "valor_total": "Valor Total (R$)",
         "etapa": "Etapa Atual",
         "materiais_pendentes": "Materiais Pendentes"
     }
 
-    dados_para_df = [item.model_dump() for item in report_data]
-    for item in dados_para_df:
-        materiais_str_list = []
-        for mat in item.get('materiais_pendentes', []):
-            code = mat.get('codigo', 'N/A')
-            pendente = mat.get('pendente', 'N/A')
-            situacao = mat.get('situacao', 'N/A')
-            previsao_mp = mat.get('previsao_mp', 'N/A')
-            if previsao_mp != 'N/A' and hasattr(previsao_mp, 'strftime'):
-                formated_date = previsao_mp.strftime('%d/%m/%Y')
-            else:
-                formated_date = 'N/A'
-            materiais_str_list.append(f"Cod.: {code} | Qtde. Pendente: {pendente} | STATUS: {situacao} | PREV: {formated_date}")
-        item['materiais_pendentes'] = "; \n".join(materiais_str_list) if materiais_str_list else ""
-    df = pd.DataFrame(dados_para_df)
-    df.rename(columns=header_mapping, inplace=True)
-    
-    if "Previsão de Entrega" in df.columns:
-        df["Previsão de Entrega"] = pd.to_datetime(df["Previsão de Entrega"])
+    if not report_data:
+        df = pd.DataFrame(columns=list(header_mapping.values()))
+    else:
+        dados_para_df = [item.model_dump() for item in report_data]
+        for item in dados_para_df:
+            materiais_str_list = []
+            for mat in item.get('materiais_pendentes', []):
+                code = mat.get('codigo', 'N/A')
+                pendente = mat.get('pendente', 'N/A')
+                situacao = mat.get('situacao', 'N/A')
+                previsao_mp = mat.get('previsao_mp', 'N/A')
+                
+                if previsao_mp != 'N/A' and hasattr(previsao_mp, 'strftime'):
+                    formated_date = previsao_mp.strftime('%d/%m/%Y')
+                else:
+                    formated_date = 'N/A'
+                    
+                materiais_str_list.append(f"Cod.: {code} | Qtde. Pendente: {pendente} | STATUS: {situacao} | PREV: {formated_date}")
+            
+            item['materiais_pendentes'] = "; \n".join(materiais_str_list) if materiais_str_list else ""
+            
+        df = pd.DataFrame(dados_para_df)
+        df.rename(columns=header_mapping, inplace=True)
+        
+        if "Previsão" in df.columns:
+            df["Previsão"] = pd.to_datetime(df["Previsão"], errors='ignore')
+
     output = BytesIO()
+    
     with pd.ExcelWriter(output, engine='xlsxwriter', datetime_format='dd/mm/yyyy') as writer:
-        df.to_excel(writer, sheet_name='RelatorioVendas', index=False)
+        if df.empty:
+            df.to_excel(writer, sheet_name='RelatorioVendas', index=False)
+            return output.getvalue()
 
         workbook = writer.book
-        worksheet = writer.sheets['RelatorioVendas']
+        worksheet = workbook.add_worksheet('RelatorioVendas')
+        header_format = workbook.add_format({
+            'bg_color': '#4472C4',
+            'font_color': '#FFFFFF',
+            'bold': True,
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        
+        for col_num, col_name in enumerate(df.columns):
+            worksheet.write(0, col_num, col_name, header_format)
 
-        currency_format = workbook.add_format({'num_format': 'R$ #,##0.00'})
-        integer_format = workbook.add_format({'num_format': '0'})
-        date_format = workbook.add_format({'num_format': 'dd/mm/yyyy', 'align': 'left'})
-        text_wrap_format = workbook.add_format({'text_wrap': True, 'valign': 'top'})
-
-        col_map = {col: i for i, col in enumerate(df.columns)}
-
-        if "Valor Unitário (R$)" in col_map:
-            worksheet.set_column(col_map["Valor Unitário (R$)"], col_map["Valor Unitário (R$)"], None, currency_format)
-        if "Valor Total (R$)" in col_map:
-            worksheet.set_column(col_map["Valor Total (R$)"], col_map["Valor Total (R$)"], None, currency_format)
-        if "Qtde. Pendente" in col_map:
-            worksheet.set_column(col_map["Qtde. Pendente"], col_map["Qtde. Pendente"], None, integer_format)
-        if "Previsão de Entrega" in col_map:
-            worksheet.set_column(col_map["Previsão de Entrega"], col_map["Previsão de Entrega"], 12, date_format)
-            
-        for i, col in enumerate(df.columns):
-            column_len = df[col].astype(str).map(len).max()
-            header_len = len(col)
-            max_len = max(column_len, header_len) + 2
-            
-            if max_len > 60:
-                if col == "Materiais Pendentes":
-                    worksheet.set_column(i, i, 50, text_wrap_format)
+        formats = {}
+        for col in df.columns:
+            for is_even in (True, False):
+                bg_color = '#D9E1F2' if is_even else '#FFFFFF'
+                if col in ["Cliente", "Materiais Pendentes", "Descrição"]:
+                    align = 'left'
                 else:
-                    worksheet.set_column(i, i, 60)
+                    align = 'center'
+                
+                fmt_dict = {
+                    'bg_color': bg_color,
+                    'border': 1,
+                    'align': align,
+                    'valign': 'vcenter'
+                }
+                
+                if col == "Materiais Pendentes":
+                    fmt_dict['text_wrap'] = True
+                elif col in ["Valor Unitário (R$)", "Valor Total (R$)"]:
+                    fmt_dict['num_format'] = 'R$ #,##0.00'
+                elif col == "Pendente":
+                    fmt_dict['num_format'] = '0'
+                elif col in ["Previsão", "Previsão de Entrega"]:
+                    fmt_dict['num_format'] = 'dd/mm/yyyy'
+
+                formats[(col, is_even)] = workbook.add_format(fmt_dict)
+
+        for row_num, row_data in enumerate(df.itertuples(index=False)):
+            is_even_row = (row_num % 2 == 0)
+            
+            for col_num, cell_value in enumerate(row_data):
+                col_name = df.columns[col_num]
+                cell_fmt = formats[(col_name, is_even_row)]
+                
+                if pd.isna(cell_value):
+                    worksheet.write_blank(row_num + 1, col_num, "", cell_fmt)
+                elif col_name in ["Previsão", "Previsão de Entrega"] and isinstance(cell_value, pd.Timestamp):
+                    worksheet.write_datetime(row_num + 1, col_num, cell_value.to_pydatetime(), cell_fmt)
+                else:
+                    worksheet.write(row_num + 1, col_num, cell_value, cell_fmt)
+
+        max_row = len(df)
+        max_col = len(df.columns)
+        worksheet.autofilter(0, 0, max_row, max_col - 1)
+        for i, col in enumerate(df.columns):
+            if col == "Materiais Pendentes":
+                max_data_len = df[col].dropna().astype(str).apply(
+                    lambda x: max([len(line) for line in x.split('\n')]) if x else 0
+                ).max()
             else:
-                worksheet.set_column(i, i, max_len)
+                max_data_len = df[col].astype(str).map(len).max()
+
+            if pd.isna(max_data_len): 
+                max_data_len = 0
+                
+            header_len = len(col)
+            max_len = max(max_data_len, header_len) + 4
+            width = min(max_len, 55 if col == "Materiais Pendentes" else 60)
+            worksheet.set_column(i, i, width)
 
     return output.getvalue()

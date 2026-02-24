@@ -23,33 +23,15 @@ class SalesReportItem(BaseModel):
     cliente: str = Field(..., description="Customer name.")
     negociacao: str = Field(..., description="Negotiation or deal identifier.")
     tipo_servico: str = Field(..., description="Type of service or sales operation.")
-
-    emissao_pv: Optional[date] = Field(
-        None, description="Sales order issue date (PV emission)."
-    )
-
     pedido_cliente: str = Field(..., description="Customer's order number.")
     op: str = Field(..., description="Production order code (OP).")
-    numero_projeto: str = Field(..., description="Project or job number.")
     codigo: str = Field(..., description="Product code.")
     produto: str = Field(..., description="Product description.")
-
     previsao: Optional[date] = Field(
         None, description="Expected delivery or completion date."
     )
-
     qtde_pendente: int = Field(..., description="Pending quantity.")
-    estoque: int = Field(..., description="Current stock level.")
-
-    valor_unitario: float = Field(..., description="Unit price of the item.")
-    ipi: Optional[float] = Field(None, description="IPI tax percentage, if applicable.")
     valor_total: float = Field(..., description="Total value for the order line.")
-    custo_estrutura: float = Field(..., description="Structure or production cost.")
-    lucratividade_rs: float = Field(..., description="Profitability in BRL.")
-    lucratividade_percentual: float = Field(
-        ..., description="Profitability percentage."
-    )
-
     condicao_pagamento: str = Field(..., description="Payment condition or terms.")
 
 
@@ -111,15 +93,13 @@ class FilteredSalesReportItem(BaseModel):
     pedido_cliente: str = Field(..., description="Customer's order number.")
     op: str = Field(..., description="Production order code (OP).")
     tipo_servico: str = Field(..., description="Type of service or sales operation.")
-    numero_projeto: str = Field(..., description="Project or job number.")
+    cliente: str = Field(..., description="Customer name.")
     codigo: str = Field(..., description="Product code.")
     produto: str = Field(..., description="Product description.")
     previsao: Optional[date] = Field(
         None, description="Expected delivery or completion date."
     )
     qtde_pendente: int = Field(..., description="Pending quantity.")
-    valor_unitario: float = Field(..., description="Unit price of the item.")
-    ipi: Optional[float] = Field(None, description="IPI tax percentage, if applicable.")
     valor_total: float = Field(..., description="Total value for the order line.")
     etapa: str = Field(..., description="Current production stage.")
     materiais_pendentes: List[PendingMaterialsItem] = Field(default_factory=list, description="List of pending materials.")
