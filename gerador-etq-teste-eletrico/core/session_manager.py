@@ -9,6 +9,7 @@ from core.utils.path_utils import resource_path
 from core.logger import logger
 from core.configs import Configs
 from core.orders import OrderList
+from dateutil.relativedelta import relativedelta
 
 ORDER_PATH = "tmp/reports/"
 
@@ -97,7 +98,10 @@ class AuthOnCM:
             logger.info("Session closed.")
 
     async def get_orders(self):
-        now = dt.now().strftime("%d-%m-%Y")
+        now = dt.now()
+        startDate = now -relativedelta(months=1)
+        endDate = now + relativedelta(months=2)
+
         order_list: OrderList = OrderList()
         async with await self.get_client() as session:
             params = {
@@ -109,8 +113,8 @@ class AuthOnCM:
                 "OrdemProducao[forecast]": "0",
                 "OrdemProducao[_inicioCriacao]": "",
                 "OrdemProducao[_fimCriacao]": "",
-                "OrdemProducao[_inicioEntrega]": "03/12/2025",
-                "OrdemProducao[_fimEntrega]": "05/12/2025",
+                "OrdemProducao[_inicioEntrega]": startDate.strftime("%d/%m/%Y"),
+                "OrdemProducao[_fimEntrega]": endDate.strftime("%d/%m/%Y"),
                 "OrdemProducao[_limparFiltro]": "0",
                 "pageSize": "20",
             }
@@ -141,6 +145,7 @@ class AuthOnCM:
 
                     deliver_date = dt.fromisoformat(tds[1].text.strip())
                     code = int(tds[2].text.strip().split("-")[-1])
+                    client = str(tds[3].text.strip())
                     product = str(tds[4].text.strip())
                     description = str(tds[5].text.strip())
                     quantity = int(tds[6].text.strip())
@@ -148,6 +153,7 @@ class AuthOnCM:
                     order_list.create_order(
                         deliver_date=deliver_date,
                         code=code,
+                        client=client,
                         product=product,
                         description=description,
                         quantity=quantity,
@@ -160,7 +166,7 @@ class AuthOnCM:
 
                 json_data = order_list.to_json()
 
-                with open(f"{ORDER_PATH}{now}_orders.json", "w", encoding="utf-8") as f:
+                with open(f"{ORDER_PATH}{now.strftime('%d-%m-%Y')}_orders.json", "w", encoding="utf-8") as f:
                     f.write(json_data)
 
                 logger.info("💾 JSON file saved: orders.json")

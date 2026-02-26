@@ -95,7 +95,7 @@ class PrinterManager:
             os.unlink(tmp.name)
         return True
 
-    def print_pdf(self, printer_name: str, pdf_path: str, copies: int = 1):
+    def print_pdf(self, printer_name: str, pdf_path: str):
         if not os.path.exists(pdf_path):
             raise FileNotFoundError(f"O arquivo PDF '{pdf_path}' não foi encontrado.")
 
@@ -106,28 +106,26 @@ class PrinterManager:
             )
 
         if self.is_windows():
-            return self._print_pdf_windows(real_printer, pdf_path, copies)
+            return self._print_pdf_windows(real_printer, pdf_path)
         elif self.is_linux():
-            return self._print_pdf_linux(real_printer, pdf_path, copies)
+            return self._print_pdf_linux(real_printer, pdf_path)
 
         raise RuntimeError("Sistema operacional não suportado.")
 
-    def _print_pdf_windows(self, printer_name, pdf_path, copies):
+    def _print_pdf_windows(self, printer_name, pdf_path):
         if not win32api:
             raise RuntimeError("win32api não instalado.")
         try:
-            for _ in range(copies):
-                win32api.ShellExecute(
-                    0, "printto", pdf_path, f'"{printer_name}"', ".", 0
-                )
-            return True
+            win32api.ShellExecute(
+                0, "printto", pdf_path, f'"{printer_name}"', ".", 0
+            )
         except Exception as e:
             raise RuntimeError(f"Erro ao tentar imprimir PDF no Windows: {e}")
 
-    def _print_pdf_linux(self, printer_name, pdf_path, copies):
+    def _print_pdf_linux(self, printer_name, pdf_path):
         try:
             subprocess.run(
-                ["lp", "-d", printer_name, "-n", str(copies), pdf_path], check=True
+                ["lp", "-d", printer_name, pdf_path], check=True
             )
             return True
         except subprocess.CalledProcessError as e:

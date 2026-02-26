@@ -13,6 +13,7 @@ dependencies = [
     "logging>=0.4.9.6",
     "pycups>=2.0.4",
     "pyside6>=6.10.1",
+    "python-dateutil>=2.9.0.post0",
     "qasync>=0.28.0",
     "reportlab>=4.4.6",
 ]

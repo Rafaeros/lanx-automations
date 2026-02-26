@@ -9,7 +9,9 @@ from PySide6.QtWidgets import (
 )
 from core.configs import Configs
 from core.orders import Order, OrderManager
+
 ORDER_PATH = "tmp/reports/"
+
 
 class SearchProductOrderWidget(QWidget):
     def __init__(self, configs: Configs, parent=None):
@@ -25,9 +27,10 @@ class SearchProductOrderWidget(QWidget):
         self.search_input.returnPressed.connect(self.search_order)
         self.search_btn = QPushButton("Buscar")
         self.search_btn.clicked.connect(self.search_order)
-        self.product_input = QLineEdit(placeholderText="Codigo do Produto", readOnly=True)
+        self.product_input = QLineEdit(placeholderText="Codigo do Produto")
         self.quantity_input = QLineEdit(placeholderText="Quantidade")
-        self.description_input = QLineEdit(placeholderText="Descrição", readOnly=True)
+        self.description_input = QLineEdit(placeholderText="Descrição")
+        self.client_code_input = QLineEdit(placeholderText="Código do Cliente")
         self.generate_label_btn = QPushButton("Gerar Etiqueta")
 
         search_layout.addWidget(self.search_input)
@@ -40,20 +43,22 @@ class SearchProductOrderWidget(QWidget):
         self.main_layout.addLayout(search_layout)
         self.main_layout.addLayout(product_layout)
         self.main_layout.addWidget(self.description_input)
+        self.main_layout.addWidget(self.client_code_input)
 
         self.setLayout(self.main_layout)
 
     def search_order(self):
         code = self.search_input.text()
         order: Order = self.order_manager.get_order_by_code(code)
-
         if order is None:
             self.product_input.setText("")
             self.quantity_input.setText("")
             self.description_input.setText("")
+            self.client_code_input.setText("")
             QMessageBox.warning(self, "Aviso", "Ordem de Produção não encontrada")
             return
 
         self.product_input.setText(order.product)
         self.quantity_input.setText(str(order.quantity))
         self.description_input.setText(order.description)
+        self.client_code_input.setText(order.client_code)

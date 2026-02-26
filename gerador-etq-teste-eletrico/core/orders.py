@@ -1,7 +1,8 @@
+import os
+import re
 import json
 from dataclasses import dataclass
 from datetime import datetime as dt
-import os
 from typing import List, Dict
 
 from core.utils.path_utils import resource_path
@@ -13,17 +14,28 @@ ORDER_PATH = "tmp/reports/"
 class Order:
     deliver_date: dt.date
     code: int
+    client: str
     product: str
     description: str
     quantity: int
+    client_code: str = ""
+
+    def __post_init__(self):
+        match = re.search(r"\((.*?)\)", self.description)
+        if match:
+            if not self.client_code:
+                self.client_code = match.group(1)
+            self.description = re.sub(r"\(.*?\)", "", self.description).strip()
 
     @classmethod
     def from_dict(cls, data: dict):
         return cls(
             deliver_date=dt.strptime(data["deliver_date"], "%Y-%m-%d %H:%M:%S"),
             code=int(data["code"]),
+            client=data["client"],
             product=data["product"],
             description=data["description"],
+            client_code=data.get("client_code", ""),
             quantity=int(data["quantity"]),
         )
 
@@ -31,8 +43,10 @@ class Order:
         return {
             "deliver_date": self.deliver_date.strftime("%Y-%m-%d %H:%M:%S"),
             "code": self.code,
+            "client": self.client,
             "product": self.product,
             "description": self.description,
+            "client_code": self.client_code,
             "quantity": self.quantity,
         }
 
@@ -45,6 +59,7 @@ class OrderList:
         self,
         deliver_date: dt.date,
         code: int,
+        client: str,
         product: str,
         description: str,
         quantity: int,
@@ -52,6 +67,7 @@ class OrderList:
         order = Order(
             deliver_date=deliver_date,
             code=code,
+            client=client,
             product=product,
             description=description,
             quantity=quantity,
@@ -73,7 +89,6 @@ class OrderManager:
             self.file_path = resource_path(f"{ORDER_PATH}{now}_orders.json")
         else:
             self.file_path = None
-
 
     def get_order_by_code(self, code: int) -> Order | None:
         now = dt.now().strftime("%d-%m-%Y")
