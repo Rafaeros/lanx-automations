@@ -31,6 +31,9 @@ class MainWidget(QWidget):
         self.print_button.clicked.connect(self.print_label)
         self.main_layout.addWidget(self.print_button)
 
+        # Adicionando o gatilho: Se apertar 'Enter' no campo de quantidade, ele imprime
+        self.search_product_order_widget.quantity_input.returnPressed.connect(self.print_label)
+
         self.main_layout.addStretch(1)
         self.setLayout(self.main_layout)
 
