@@ -28,6 +28,7 @@ class SearchProductOrderWidget(QWidget):
         self.search_btn = QPushButton("Buscar")
         self.search_btn.clicked.connect(self.search_order)
         self.product_input = QLineEdit(placeholderText="Codigo do Produto")
+        self.client_input = QLineEdit(placeholderText="Nome do Cliente")
         self.quantity_input = QLineEdit(placeholderText="Quantidade")
         self.description_input = QLineEdit(placeholderText="Descrição")
         self.client_code_input = QLineEdit(placeholderText="Código do Cliente")
@@ -41,6 +42,7 @@ class SearchProductOrderWidget(QWidget):
 
         self.main_layout.addWidget(self.search_label)
         self.main_layout.addLayout(search_layout)
+        self.main_layout.addWidget(self.client_input)
         self.main_layout.addLayout(product_layout)
         self.main_layout.addWidget(self.description_input)
         self.main_layout.addWidget(self.client_code_input)
@@ -52,6 +54,7 @@ class SearchProductOrderWidget(QWidget):
         order: Order = self.order_manager.get_order_by_code(code)
         if order is None:
             self.product_input.setText("")
+            self.client_input.setText("")
             self.quantity_input.setText("")
             self.description_input.setText("")
             self.client_code_input.setText("")
@@ -59,6 +62,7 @@ class SearchProductOrderWidget(QWidget):
             return
 
         self.product_input.setText(order.product)
+        self.client_input.setText(order.client)
         self.quantity_input.setText(str(order.quantity))
         self.description_input.setText(order.description)
         self.client_code_input.setText(order.client_code)

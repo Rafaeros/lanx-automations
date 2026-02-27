@@ -46,26 +46,30 @@ class MainWidget(QWidget):
         date_part, time_part = current_date.split("-")
 
         try:
-            pdf_path = generate_labels(
+            quantity = int(self.search_product_order_widget.quantity_input.text())
+
+            file_path = generate_labels(
                 self.search_product_order_widget.search_input.text(),
                 self.search_product_order_widget.product_input.text(),
+                self.search_product_order_widget.client_input.text(),
                 self.operator_list_widget.operator_combo_box.currentText(),
                 self.search_product_order_widget.description_input.text(),
                 self.search_product_order_widget.client_code_input.text(),
                 date_part,
                 time_part,
-                quantity=int(self.search_product_order_widget.quantity_input.text()),
+                quantity=quantity,
             )
-            if not pdf_path or not os.path.exists(pdf_path):
+
+            if not file_path or not os.path.exists(file_path):
                 raise FileNotFoundError(
-                    "O arquivo PDF da etiqueta não pôde ser encontrado após a geração."
+                    "O arquivo da etiqueta não pôde ser encontrado após a geração."
                 )
-            self.printer.print_pdf(
-                printer_name,
-                pdf_path,
-            )
+
+            self.printer.print_label(printer_name, file_path, quantity)
+
             self.search_product_order_widget.search_input.setText("")
             self.search_product_order_widget.product_input.setText("")
+            self.search_product_order_widget.client_input.setText("")
             self.search_product_order_widget.description_input.setText("")
             self.search_product_order_widget.client_code_input.setText("")
             self.search_product_order_widget.quantity_input.setText("")

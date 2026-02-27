@@ -11,9 +11,11 @@ dependencies = [
     "certifi>=2025.11.12",
     "datetime>=6.0",
     "logging>=0.4.9.6",
+    "pillow>=12.0.0",
     "pycups>=2.0.4",
     "pyside6>=6.10.1",
     "python-dateutil>=2.9.0.post0",
     "qasync>=0.28.0",
+    "qrcode>=8.2",
     "reportlab>=4.4.6",
 ]
