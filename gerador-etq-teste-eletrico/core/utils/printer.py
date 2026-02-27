@@ -53,6 +53,8 @@ class PrinterManager:
         real_printer = self.find_printer(printer_name)
         if not real_printer:
             raise RuntimeError(f"Impressora '{printer_name}' não encontrada no sistema.")
+        
+        file_path = os.path.abspath(file_path)
 
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"O arquivo '{file_path}' não foi encontrado.")

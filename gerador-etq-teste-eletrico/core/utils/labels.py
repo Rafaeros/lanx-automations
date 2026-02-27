@@ -357,10 +357,6 @@ def generate_mwm_pdf(
 
 
 def generate_labels(code, product, client, operator, description, client_code, date, hour, quantity):
-    """
-    Se for Windows: Gera PDF com múltiplas páginas e retorna o caminho .pdf
-    Se for Linux: Gera apenas 1 Imagem e retorna o caminho .png
-    """
     is_linux = platform.system().lower().startswith("linux")
 
     if is_linux:
@@ -370,6 +366,6 @@ def generate_labels(code, product, client, operator, description, client_code, d
             return generate_normal_img(code, product, operator, description, client_code, date, hour)
     else:
         if product.startswith("MWM"):
-            return generate_mwm_pdf(code, product, client, operator, description, client_code, date, hour, quantity)
+            return generate_mwm_pdf(code, product, client, operator, client_code, date, hour, quantity)
         else:
             return generate_normal_pdf(code, product, client, operator, description, client_code, date, hour, quantity)
