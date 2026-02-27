@@ -13,12 +13,32 @@ SOFT_BLACK = CMYKColor(0, 0, 0, 0.80)
 
 QR_SIZE = 18 * mm
 QR_RIGHT_MARGIN = 8 * mm
-QR_BOTTOM_MARGIN = 6 * mm  
-QR_TEXT_OFFSET = 2.5 * mm  
-
+QR_BOTTOM_MARGIN = 6 * mm
+QR_TEXT_OFFSET = 2.5 * mm
 
 
 def draw_qr_with_text(c: canvas.Canvas, qr_data: str):
+    qr_code = qr.QrCodeWidget(qr_data)
+    bounds = qr_code.getBounds()
+
+    width = bounds[2] - bounds[0]
+    height = bounds[3] - bounds[1]
+
+    scale = min(QR_SIZE / width, QR_SIZE / height)
+
+    drawing = Drawing(
+        width * scale, height * scale, transform=[scale, 0, 0, scale, 0, 0]
+    )
+    drawing.add(qr_code)
+
+    x_qr = PAGE_W - QR_SIZE - QR_RIGHT_MARGIN
+    y_qr = QR_BOTTOM_MARGIN
+
+    drawing.drawOn(c, x_qr, y_qr)
+    c.setFont("Helvetica", 5)
+    c.drawCentredString(x_qr + (QR_SIZE / 2), y_qr - QR_TEXT_OFFSET, qr_data)
+
+def draw_qr_only(c: canvas.Canvas, qr_data: str):
     qr_code = qr.QrCodeWidget(qr_data)
     bounds = qr_code.getBounds()
 
@@ -33,17 +53,10 @@ def draw_qr_with_text(c: canvas.Canvas, qr_data: str):
         transform=[scale, 0, 0, scale, 0, 0]
     )
     drawing.add(qr_code)
-
     x_qr = PAGE_W - QR_SIZE - QR_RIGHT_MARGIN
     y_qr = QR_BOTTOM_MARGIN
 
     drawing.drawOn(c, x_qr, y_qr)
-    c.setFont("Helvetica", 5)
-    c.drawCentredString(
-        x_qr + (QR_SIZE / 2),
-        y_qr - QR_TEXT_OFFSET,
-        qr_data
-    )
 
 
 def generate_normal_label(
@@ -115,7 +128,7 @@ def generate_normal_label(
         c.setFont("Helvetica-Bold", 10)
         c.drawCentredString(19 * mm, box_text_y, "APROVADO")
 
-        draw_qr_with_text(c, qr_data)
+        draw_qr_only(c, qr_data)
 
         c.showPage()
 
@@ -177,6 +190,7 @@ def generate_mwm_label(
     c.save()
     return LABEL_PATH
 
+
 def generate_labels(
     code: str,
     product: str,
@@ -187,7 +201,7 @@ def generate_labels(
     hour: str,
     quantity: int,
 ):
-    if(product.startswith("MWM")):
+    if product.startswith("MWM"):
         return generate_mwm_label(
             code=code,
             product=product,
@@ -209,4 +223,3 @@ def generate_labels(
             hour=hour,
             quantity=quantity,
         )
-
