@@ -1,4 +1,5 @@
 import os
+import csv
 from datetime import datetime as dt
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QMessageBox
@@ -33,6 +34,33 @@ class MainWidget(QWidget):
         self.main_layout.addStretch(1)
         self.setLayout(self.main_layout)
 
+    def _log_metrics(self, action: str, operator: str, order: str, product: str, quantity: int):
+        """Salva as métricas de impressão em um arquivo CSV."""
+        try:
+            log_dir = "tmp/logs"
+            os.makedirs(log_dir, exist_ok=True)
+            file_path = os.path.join(log_dir, "print_metrics.csv")
+            file_exists = os.path.exists(file_path)
+
+            with open(file_path, mode="a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f, delimiter=";")
+                
+                if not file_exists:
+                    writer.writerow(["ACAO", "DATA", "HORA", "OPERADOR", "ORDEM", "PRODUTO", "QUANTIDADE_ETIQUETAS"])
+
+                now = dt.now()
+                writer.writerow([
+                    action,
+                    now.strftime("%d/%m/%Y"),
+                    now.strftime("%H:%M:%S"),
+                    operator,
+                    order,
+                    product,
+                    quantity
+                ])
+        except Exception as e:
+            print(f"Aviso: Não foi possível salvar a métrica. Erro: {str(e)}")
+
     def print_label(self):
         printer_name = self.configs.get("printer")
         if not printer_name:
@@ -66,6 +94,14 @@ class MainWidget(QWidget):
                 )
 
             self.printer.print_label(printer_name, file_path, quantity)
+
+            self._log_metrics(
+                action="IMPRESSAO",
+                operator=self.operator_list_widget.operator_combo_box.currentText(),
+                order=self.search_product_order_widget.search_input.text(),
+                product=self.search_product_order_widget.product_input.text(),
+                quantity=quantity
+            )
 
             self.search_product_order_widget.search_input.setText("")
             self.search_product_order_widget.product_input.setText("")
