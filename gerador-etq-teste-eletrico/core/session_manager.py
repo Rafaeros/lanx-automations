@@ -150,6 +150,9 @@ class AuthOnCM:
                     description = str(tds[5].text.strip())
                     quantity = int(tds[6].text.strip())
 
+                    if description.startswith(product):
+                        description = description.split("-")[-1].strip()
+
                     order_list.create_order(
                         deliver_date=deliver_date,
                         code=code,
