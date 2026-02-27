@@ -81,7 +81,7 @@ def generate_normal_img(code, product, operator, description, client_code, date,
     draw.text((x_px(4), y_px(24.5)), "OPER:", font=f_bold, fill="black")
     draw.text((x_px(4), y_px(20)), "PROD:", font=f_bold, fill="black")
     
-    draw.text((x_px(20), y_px(33.5)), product, font=f_reg, fill="black")
+    draw.text((x_px(18), y_px(33.5)), product, font=f_reg, fill="black")
     draw.text((x_px(15), y_px(29)), code, font=f_reg, fill="black")
     draw.text((x_px(15), y_px(24.5)), operator, font=f_reg, fill="black")
     
@@ -200,7 +200,7 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(4 * mm, 20 * mm, "PROD:")
         
         c.setFont("Helvetica", 8)
-        c.drawString(20 * mm, 33.5 * mm, product)
+        c.drawString(18 * mm, 33.5 * mm, product)
         c.drawString(15 * mm, 29 * mm, code)
         c.drawString(15 * mm, 24.5 * mm, operator)
         
@@ -208,7 +208,7 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         second_line = False
 
         if desc_lines:
-            c.drawString(18 * mm, 20 * mm, desc_lines[0])
+            c.drawString(15 * mm, 20 * mm, desc_lines[0])
             if len(desc_lines) > 1:
                 second_line = True
                 desc_lines_2 = simpleSplit(" ".join(desc_lines[1:]), "Helvetica", 8, 50 * mm)
@@ -219,8 +219,8 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(38 * mm, 29 * mm, "DATA:")
         c.drawString(38 * mm, 24.5 * mm, "HORA:")
         c.setFont("Helvetica", 8)
-        c.drawString(50 * mm, 29 * mm, date)
-        c.drawString(50 * mm, 24.5 * mm, hour)
+        c.drawString(49 * mm, 29 * mm, date)
+        c.drawString(49 * mm, 24.5 * mm, hour)
 
         if second_line:
             c_cli_y, box_y, box_text_y = 12 * mm, 2 * mm, 3.5 * mm
@@ -263,9 +263,9 @@ def generate_mwm_pdf(code, product, client, operator, client_code, date, hour, q
         c.setFont("Helvetica", 8)
         c.drawString(19 * mm, 33.5 * mm, product)
         c.drawString(19 * mm, 29 * mm, client_short)
-        c.drawString(48 * mm, 29 * mm, date)
+        c.drawString(49 * mm, 29 * mm, date)
         c.drawString(14 * mm, 24.5 * mm, operator)
-        c.drawString(48 * mm, 24.5 * mm, hour)
+        c.drawString(49 * mm, 24.5 * mm, hour)
         c.drawString(14 * mm, 20 * mm, code)
         c.setFont("Helvetica-Bold", 14)
         c.drawString(4 * mm, 14.5 * mm, client_code)
