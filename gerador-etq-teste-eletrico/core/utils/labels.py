@@ -66,7 +66,7 @@ def draw_pdf_qr(c, qr_data, x, y, size, with_text=False):
     drawing.add(qr_code)
     drawing.drawOn(c, x, y)
     if with_text:
-        c.setFont("Helvetica-Bold", 6.5)
+        c.setFont("Helvetica", 5)
         c.drawCentredString(x + (size / 2), y - (2.5 * mm), qr_data)
 
 def generate_normal_img(code, product, operator, description, client_code, date, hour):
@@ -137,7 +137,7 @@ def generate_mwm_img(code, product, client, operator, client_code, date, hour):
     f_reg, f_bold, _, f_cli, f_mini = get_fonts()
     
     try:
-        f_qr = ImageFont.truetype("DejaVuSans-Bold.ttf", int(6.5 * 2.8))
+        f_qr = ImageFont.truetype("DejaVuSans.ttf", int(5 * 2.8))
     except IOError:
         f_qr = f_mini
         
