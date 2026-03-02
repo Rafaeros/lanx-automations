@@ -81,15 +81,15 @@ def generate_normal_img(code, product, operator, description, client_code, date,
     draw.text((x_px(4), y_px(24.5)), "OPER:", font=f_bold, fill="black")
     draw.text((x_px(4), y_px(20)), "PROD:", font=f_bold, fill="black")
     
-    draw.text((x_px(20), y_px(33.5)), product, font=f_reg, fill="black")
-    draw.text((x_px(15), y_px(29)), code, font=f_reg, fill="black")
-    draw.text((x_px(15), y_px(24.5)), operator, font=f_reg, fill="black")
+    draw.text((x_px(18.5), y_px(33.5)), product, font=f_reg, fill="black")
+    draw.text((x_px(14.5), y_px(29)), code, font=f_reg, fill="black")
+    draw.text((x_px(14.5), y_px(24.5)), operator, font=f_reg, fill="black")
     
     desc_lines = simple_split_pil(description, f_reg, x_px(42))
     second_line = False
     
     if desc_lines:
-        draw.text((x_px(15), y_px(20)), desc_lines[0], font=f_reg, fill="black")
+        draw.text((x_px(14.5), y_px(20)), desc_lines[0], font=f_reg, fill="black")
         if len(desc_lines) > 1:
             second_line = True
             desc_lines_2 = simple_split_pil(" ".join(desc_lines[1:]), f_reg, x_px(50))
@@ -98,14 +98,14 @@ def generate_normal_img(code, product, operator, description, client_code, date,
 
     draw.text((x_px(38), y_px(29)), "DATA:", font=f_bold, fill="black")
     draw.text((x_px(38), y_px(24.5)), "HORA:", font=f_bold, fill="black")
-    draw.text((x_px(49), y_px(29)), date, font=f_reg, fill="black")
-    draw.text((x_px(49), y_px(24.5)), hour, font=f_reg, fill="black")
+    draw.text((x_px(48), y_px(29)), date, font=f_reg, fill="black")
+    draw.text((x_px(48), y_px(24.5)), hour, font=f_reg, fill="black")
 
     c_cli_y, box_y, box_text_y = (12, 2, 3.5) if second_line else (16, 6, 7.5)
 
     if client_code:
         draw.text((x_px(4), y_px(c_cli_y)), "COD. CLIENTE:", font=f_bold, fill="black")
-        draw.text((x_px(28), y_px(c_cli_y)), client_code, font=f_reg, fill="black")
+        draw.text((x_px(27), y_px(c_cli_y)), client_code, font=f_reg, fill="black")
 
     rect_top = y_px(box_y + 6)
     rect_bottom = y_px(box_y)
@@ -155,8 +155,8 @@ def generate_mwm_img(code, product, client, operator, client_code, date, hour):
     draw.text((x_px(4), y_px(24.5)), "OPER:", font=f_bold, fill="black")
     draw.text((x_px(38), y_px(24.5)), "HORA:", font=f_bold, fill="black")
     draw.text((x_px(4), y_px(20)), "LOTE:", font=f_bold, fill="black")
-    draw.text((x_px(19), y_px(33.5)), product, font=f_reg, fill="black")
-    draw.text((x_px(19), y_px(29)), client_short, font=f_reg, fill="black")
+    draw.text((x_px(18), y_px(33.5)), product, font=f_reg, fill="black")
+    draw.text((x_px(18), y_px(29)), client_short, font=f_reg, fill="black")
     draw.text((x_px(49), y_px(29)), date, font=f_reg, fill="black")
     draw.text((x_px(14), y_px(24.5)), operator, font=f_reg, fill="black")
     draw.text((x_px(49), y_px(24.5)), hour, font=f_reg, fill="black")
@@ -200,15 +200,15 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(4 * mm, 20 * mm, "PROD:")
         
         c.setFont("Helvetica", 8)
-        c.drawString(20 * mm, 33.5 * mm, product)
-        c.drawString(15 * mm, 29 * mm, code)
-        c.drawString(15 * mm, 24.5 * mm, operator)
+        c.drawString(18.5 * mm, 33.5 * mm, product)
+        c.drawString(14.5 * mm, 29 * mm, code)
+        c.drawString(14.5 * mm, 24.5 * mm, operator)
         
         desc_lines = simpleSplit(description, "Helvetica", 8, 42 * mm)
         second_line = False
 
         if desc_lines:
-            c.drawString(15 * mm, 20 * mm, desc_lines[0])
+            c.drawString(14.5 * mm, 20 * mm, desc_lines[0])
             if len(desc_lines) > 1:
                 second_line = True
                 desc_lines_2 = simpleSplit(" ".join(desc_lines[1:]), "Helvetica", 8, 50 * mm)
@@ -233,11 +233,13 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
             c.setFont("Helvetica", 8)
             c.drawString(28 * mm, c_cli_y, client_code)
 
-        c.rect(4 * mm, box_y, 30 * mm, 6 * mm, stroke=1, fill=0)
+        rect_y = box_y + 2 * mm
+        text_y = box_text_y + 2 * mm
+        c.rect(4 * mm, rect_y, 30 * mm, 6 * mm, stroke=1, fill=0)
         c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(19 * mm, box_text_y, "APROVADO")
-
-        draw_pdf_qr(c, qr_data, 66 * mm, box_y, QR_SIZE, False)
+        c.drawCentredString(19 * mm, text_y, "APROVADO")
+        draw_pdf_qr(c, qr_data, 63.5 * mm, box_y - 2.5 * mm, 20 * mm, False)
+        
         c.showPage()
 
     c.save()
@@ -260,20 +262,22 @@ def generate_mwm_pdf(code, product, client, operator, client_code, date, hour, q
         c.drawString(4 * mm, 24.5 * mm, "OPER:")
         c.drawString(38 * mm, 24.5 * mm, "HORA:")
         c.drawString(4 * mm, 20 * mm, "LOTE:")
+        
         c.setFont("Helvetica", 8)
-        c.drawString(19 * mm, 33.5 * mm, product)
-        c.drawString(19 * mm, 29 * mm, client_short)
+        c.drawString(18 * mm, 33.5 * mm, product)
+        c.drawString(18 * mm, 29 * mm, client_short)
         c.drawString(49 * mm, 29 * mm, date)
         c.drawString(14 * mm, 24.5 * mm, operator)
         c.drawString(49 * mm, 24.5 * mm, hour)
         c.drawString(14 * mm, 20 * mm, code)
-        c.setFont("Helvetica-Bold", 18)
+        c.setFont("Helvetica-Bold", 14)
         c.drawString(4 * mm, 14.5 * mm, client_code)
-        
-        c.setFont("Helvetica-Bold", 18)
+        c.setFont("Helvetica-Bold", 14)
         c.drawCentredString(19 * mm, 8.5 * mm, "APROVADO")
-
-        draw_pdf_qr(c, qr_data, 58 * mm, 4 * mm, 14 * mm, True)
+        draw_pdf_qr(c, qr_data, 55.25 * mm, 1.25 * mm, 19.5 * mm, False)
+        c.setFont("Helvetica", 5)
+        c.drawCentredString(65 * mm, 2.5 * mm, qr_data)
+        
         c.showPage()
 
     c.save()
