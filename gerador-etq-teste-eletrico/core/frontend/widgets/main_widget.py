@@ -113,6 +113,7 @@ class MainWidget(QWidget):
             self.search_product_order_widget.client_code_input.setText("")
             self.search_product_order_widget.quantity_input.setText("")
             QMessageBox.information(self, "Sucesso", "Etiqueta impressa com sucesso.")
+            self.search_product_order_widget.search_input.setFocus()
 
         except Exception as e:
             QMessageBox.critical(
