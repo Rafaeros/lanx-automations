@@ -66,7 +66,7 @@ def draw_pdf_qr(c, qr_data, x, y, size, with_text=False):
     drawing.add(qr_code)
     drawing.drawOn(c, x, y)
     if with_text:
-        c.setFont("Helvetica", 5)
+        c.setFont("Helvetica-Bold", 6.5)
         c.drawCentredString(x + (size / 2), y - (2.5 * mm), qr_data)
 
 def generate_normal_img(code, product, operator, description, client_code, date, hour):
@@ -81,7 +81,7 @@ def generate_normal_img(code, product, operator, description, client_code, date,
     draw.text((x_px(4), y_px(24.5)), "OPER:", font=f_bold, fill="black")
     draw.text((x_px(4), y_px(20)), "PROD:", font=f_bold, fill="black")
     
-    draw.text((x_px(18), y_px(33.5)), product, font=f_reg, fill="black")
+    draw.text((x_px(20), y_px(33.5)), product, font=f_reg, fill="black")
     draw.text((x_px(15), y_px(29)), code, font=f_reg, fill="black")
     draw.text((x_px(15), y_px(24.5)), operator, font=f_reg, fill="black")
     
@@ -137,7 +137,7 @@ def generate_mwm_img(code, product, client, operator, client_code, date, hour):
     f_reg, f_bold, _, f_cli, f_mini = get_fonts()
     
     try:
-        f_qr = ImageFont.truetype("DejaVuSans-Bold.ttf", int(5 * 2.8))
+        f_qr = ImageFont.truetype("DejaVuSans-Bold.ttf", int(6.5 * 2.8))
     except IOError:
         f_qr = f_mini
         
@@ -200,7 +200,7 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(4 * mm, 20 * mm, "PROD:")
         
         c.setFont("Helvetica", 8)
-        c.drawString(18 * mm, 33.5 * mm, product)
+        c.drawString(20 * mm, 33.5 * mm, product)
         c.drawString(15 * mm, 29 * mm, code)
         c.drawString(15 * mm, 24.5 * mm, operator)
         
@@ -267,10 +267,10 @@ def generate_mwm_pdf(code, product, client, operator, client_code, date, hour, q
         c.drawString(14 * mm, 24.5 * mm, operator)
         c.drawString(49 * mm, 24.5 * mm, hour)
         c.drawString(14 * mm, 20 * mm, code)
-        c.setFont("Helvetica-Bold", 14)
+        c.setFont("Helvetica-Bold", 18)
         c.drawString(4 * mm, 14.5 * mm, client_code)
         
-        c.setFont("Helvetica-Bold", 14)
+        c.setFont("Helvetica-Bold", 18)
         c.drawCentredString(19 * mm, 8.5 * mm, "APROVADO")
 
         draw_pdf_qr(c, qr_data, 58 * mm, 4 * mm, 14 * mm, True)
