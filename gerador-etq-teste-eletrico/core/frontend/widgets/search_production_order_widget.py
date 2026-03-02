@@ -66,3 +66,4 @@ class SearchProductOrderWidget(QWidget):
         self.quantity_input.setText(str(order.quantity))
         self.description_input.setText(order.description)
         self.client_code_input.setText(order.client_code)
+        self.quantity_input.setFocus()
