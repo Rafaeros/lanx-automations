@@ -200,15 +200,15 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(4 * mm, 20 * mm, "PROD:")
         
         c.setFont("Helvetica", 8)
-        c.drawString(18.5 * mm, 33.5 * mm, product)
-        c.drawString(14.5 * mm, 29 * mm, code)
-        c.drawString(14.5 * mm, 24.5 * mm, operator)
+        c.drawString(17.5 * mm, 33.5 * mm, product)
+        c.drawString(13.5 * mm, 29 * mm, code)
+        c.drawString(13.5 * mm, 24.5 * mm, operator)
         
         desc_lines = simpleSplit(description, "Helvetica", 8, 42 * mm)
         second_line = False
 
         if desc_lines:
-            c.drawString(14.5 * mm, 20 * mm, desc_lines[0])
+            c.drawString(14 * mm, 20 * mm, desc_lines[0])
             if len(desc_lines) > 1:
                 second_line = True
                 desc_lines_2 = simpleSplit(" ".join(desc_lines[1:]), "Helvetica", 8, 50 * mm)
@@ -219,8 +219,8 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(38 * mm, 29 * mm, "DATA:")
         c.drawString(38 * mm, 24.5 * mm, "HORA:")
         c.setFont("Helvetica", 8)
-        c.drawString(49 * mm, 29 * mm, date)
-        c.drawString(49 * mm, 24.5 * mm, hour)
+        c.drawString(47.5 * mm, 29 * mm, date)
+        c.drawString(47.5 * mm, 24.5 * mm, hour)
 
         if second_line:
             c_cli_y, box_y, box_text_y = 12 * mm, 2 * mm, 3.5 * mm
@@ -231,14 +231,16 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
             c.setFont("Helvetica-Bold", 8)
             c.drawString(4 * mm, c_cli_y, "COD. CLIENTE:")
             c.setFont("Helvetica", 8)
-            c.drawString(28 * mm, c_cli_y, client_code)
+            c.drawString(26 * mm, c_cli_y, client_code)
 
         rect_y = box_y + 2 * mm
         text_y = box_text_y + 2 * mm
         c.rect(4 * mm, rect_y, 30 * mm, 6 * mm, stroke=1, fill=0)
         c.setFont("Helvetica-Bold", 10)
         c.drawCentredString(19 * mm, text_y, "APROVADO")
-        draw_pdf_qr(c, qr_data, 63.5 * mm, box_y - 2.5 * mm, 20 * mm, False)
+        draw_pdf_qr(c, qr_data, 55.25 * mm, box_y + 3 * mm, 20 * mm, False)
+        c.setFont("Helvetica-Bold", 6)
+        c.drawCentredString(64 * mm, 5 * mm, qr_data)
         
         c.showPage()
 
@@ -264,19 +266,26 @@ def generate_mwm_pdf(code, product, client, operator, client_code, date, hour, q
         c.drawString(4 * mm, 20 * mm, "LOTE:")
         
         c.setFont("Helvetica", 8)
-        c.drawString(18 * mm, 33.5 * mm, product)
-        c.drawString(18 * mm, 29 * mm, client_short)
-        c.drawString(49 * mm, 29 * mm, date)
-        c.drawString(14 * mm, 24.5 * mm, operator)
-        c.drawString(49 * mm, 24.5 * mm, hour)
-        c.drawString(14 * mm, 20 * mm, code)
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(4 * mm, 14.5 * mm, client_code)
-        c.setFont("Helvetica-Bold", 14)
-        c.drawCentredString(19 * mm, 8.5 * mm, "APROVADO")
-        draw_pdf_qr(c, qr_data, 55.25 * mm, 1.25 * mm, 19.5 * mm, False)
-        c.setFont("Helvetica", 5)
-        c.drawCentredString(65 * mm, 2.5 * mm, qr_data)
+        c.drawString(17.5 * mm, 33.5 * mm, product)
+        c.drawString(17.5 * mm, 29 * mm, client_short)
+        c.drawString(13.5 * mm, 24.5 * mm, operator)
+        c.drawString(48 * mm, 29 * mm, date)
+        c.drawString(48 * mm, 24.5 * mm, hour)
+        c.drawString(13.5 * mm, 20 * mm, code)
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(4 * mm, 13 * mm, client_code)
+
+        rect_x = 4 * mm
+        rect_y = 5.5 * mm 
+        rect_w = 30 * mm
+        rect_h = 6 * mm
+        c.rect(rect_x, rect_y, rect_w, rect_h, stroke=1, fill=0)
+
+        c.setFont("Helvetica-Bold", 10)
+        c.drawCentredString(19 * mm, 6.8 * mm, "APROVADO")
+        draw_pdf_qr(c, qr_data, 58 * mm, 5 * mm, 19.5 * mm, False)
+        c.setFont("Helvetica-Bold", 6)
+        c.drawCentredString(64 * mm, 5 * mm, qr_data)
         
         c.showPage()
 
