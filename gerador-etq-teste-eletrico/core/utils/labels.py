@@ -227,11 +227,17 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         else:
             c_cli_y, box_y, box_text_y = 16 * mm, 6 * mm, 7.5 * mm
 
+        
         if client_code:
             c.setFont("Helvetica-Bold", 8)
             c.drawString(4 * mm, c_cli_y, "COD. CLIENTE:")
             c.setFont("Helvetica", 8)
-            c.drawString(26 * mm, c_cli_y, client_code)
+            
+            if client.startswith("TRUCKS"):
+                if client_code.startswith("TRUCKS") or client_code.startswith("COD."):
+                    client_code = client_code.split(":")[-1].strip()
+
+            c.drawString(28 * mm, c_cli_y, client_code)
 
         rect_y = box_y + 2 * mm
         text_y = box_text_y + 2 * mm
