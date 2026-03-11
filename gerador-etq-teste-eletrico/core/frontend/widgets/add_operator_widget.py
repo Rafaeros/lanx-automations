@@ -22,19 +22,25 @@ class AddOperatorWidget(QWidget):
         self.form_layout = QFormLayout()
 
         self.name = QLabel("Nome do Operador")
-        self.name_input = QLineEdit()
+        self.name_input = QLineEdit(placeholderText="Ex: João Silva")
         self.add_operator_btn = QPushButton("Adicionar Operador")
+        self.add_operator_btn.setObjectName("primary")
 
         self.form_layout.addRow(self.name, self.name_input)
         self.h_layout.addLayout(self.form_layout)
         self.h_layout.addWidget(self.add_operator_btn)
+        self.h_layout.setContentsMargins(0, 10, 0, 10)
+        self.h_layout.setSpacing(15)
+
         self.v_layout.addLayout(self.h_layout)
         self.v_layout.addStretch()
         self.setLayout(self.v_layout)
 
         self.add_operator_btn.clicked.connect(self.add_operator)
+        self.name_input.returnPressed.connect(self.add_operator)
 
     def add_operator(self):
+        """Adds a new operator to the configuration and notifies listeners."""
         name = self.name_input.text().strip()
         if not name:
             return

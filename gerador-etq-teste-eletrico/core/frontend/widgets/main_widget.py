@@ -2,7 +2,14 @@ import os
 import csv
 from datetime import datetime as dt
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QMessageBox
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QMessageBox,
+    QCheckBox,
+)
 
 from core.configs import Configs
 from core.frontend.widgets.search_production_order_widget import (
@@ -28,15 +35,36 @@ class MainWidget(QWidget):
         self.main_layout.addWidget(self.search_product_order_widget)
 
         self.print_button = QPushButton("Imprimir Etiqueta")
+        self.print_button.setObjectName("primary")
         self.print_button.clicked.connect(self.print_label)
+
+        # Checkbox e Botão de Limpar
+        controls_layout = QHBoxLayout()
+        self.clear_on_print_checkbox = QCheckBox("Limpar campos ao imprimir")
+        self.clear_on_print_checkbox.setChecked(True)
+
+        self.clear_fields_button = QPushButton("Limpar Campos")
+        self.clear_fields_button.clicked.connect(
+            self.search_product_order_widget.clear_inputs
+        )
+
+        controls_layout.addWidget(self.clear_on_print_checkbox)
+        controls_layout.addStretch()
+        controls_layout.addWidget(self.clear_fields_button)
+
         self.main_layout.addWidget(self.print_button)
-        self.search_product_order_widget.quantity_input.returnPressed.connect(self.print_label)
+        self.main_layout.addLayout(controls_layout)
+        self.search_product_order_widget.quantity_input.returnPressed.connect(
+            self.print_label
+        )
 
         self.main_layout.addStretch(1)
         self.setLayout(self.main_layout)
 
-    def _log_metrics(self, action: str, operator: str, order: str, product: str, quantity: int):
-        """Salva as métricas de impressão em um arquivo CSV."""
+    def _log_metrics(
+        self, action: str, operator: str, order: str, product: str, quantity: int
+    ):
+        """Saves print metrics to a CSV file."""
         try:
             log_dir = "tmp/logs"
             os.makedirs(log_dir, exist_ok=True)
@@ -45,20 +73,32 @@ class MainWidget(QWidget):
 
             with open(file_path, mode="a", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f, delimiter=";")
-                
+
                 if not file_exists:
-                    writer.writerow(["ACAO", "DATA", "HORA", "OPERADOR", "ORDEM", "PRODUTO", "QUANTIDADE_ETIQUETAS"])
+                    writer.writerow(
+                        [
+                            "ACAO",
+                            "DATA",
+                            "HORA",
+                            "OPERADOR",
+                            "ORDEM",
+                            "PRODUTO",
+                            "QUANTIDADE_ETIQUETAS",
+                        ]
+                    )
 
                 now = dt.now()
-                writer.writerow([
-                    action,
-                    now.strftime("%d/%m/%Y"),
-                    now.strftime("%H:%M:%S"),
-                    operator,
-                    order,
-                    product,
-                    quantity
-                ])
+                writer.writerow(
+                    [
+                        action,
+                        now.strftime("%d/%m/%Y"),
+                        now.strftime("%H:%M:%S"),
+                        operator,
+                        order,
+                        product,
+                        quantity,
+                    ]
+                )
         except Exception as e:
             print(f"Aviso: Não foi possível salvar a métrica. Erro: {str(e)}")
 
@@ -101,17 +141,13 @@ class MainWidget(QWidget):
                 operator=self.operator_list_widget.operator_combo_box.currentText(),
                 order=self.search_product_order_widget.search_input.text(),
                 product=self.search_product_order_widget.product_input.text(),
-                quantity=quantity
+                quantity=quantity,
             )
 
-            self.search_product_order_widget.search_input.setText("")
-            self.search_product_order_widget.product_input.setText("")
-            self.search_product_order_widget.client_input.setText("")
-            self.search_product_order_widget.description_input.setText("")
-            self.search_product_order_widget.client_code_input.setText("")
-            self.search_product_order_widget.quantity_input.setText("")
+            if self.clear_on_print_checkbox.isChecked():
+                self.search_product_order_widget.clear_inputs()
+
             QMessageBox.information(self, "Sucesso", "Etiqueta impressa com sucesso.")
-            self.search_product_order_widget.search_input.setFocus()
 
         except Exception as e:
             QMessageBox.critical(

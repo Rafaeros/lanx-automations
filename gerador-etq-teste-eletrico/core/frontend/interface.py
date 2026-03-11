@@ -31,7 +31,10 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Gerador de Etiqueta Teste Elétrico V1.0")
         self.setWindowIcon(QIcon(resource_path("core/assets/icon.png")))
-        self.loading_overlay = LoadingOverlay(self, "Carregando OPs da Carga Máquina...")
+        self.loading_overlay = LoadingOverlay(
+            self, "Carregando OPs da Carga Máquina..."
+        )
+        # Initialize UI after the window is ready
         QtCore.QTimer.singleShot(0, self.setup_ui)
 
     def closeEvent(self, event):
@@ -42,7 +45,7 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if hasattr(self, 'loading_overlay') and self.loading_overlay is not None:
+        if hasattr(self, "loading_overlay") and self.loading_overlay is not None:
             self.loading_overlay.resize(self.size())
 
     @asyncSlot()
@@ -51,7 +54,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
         self.tabs.currentChanged.connect(self.tab_changed)
         self.show()
-        
+
         if not self.configs.get("username") or not self.configs.get("password"):
             dlg = CredentialsDialog(self.configs, self)
             result = dlg.exec()
@@ -59,7 +62,7 @@ class MainWindow(QMainWindow):
             if result != QDialog.Accepted:
                 QMessageBox.critical(self, "Erro", "Credenciais não fornecidas.")
                 return
-        
+
         if self.order_manager.file_path is None:
             self.loading_overlay.resize(self.size())
             self.loading_overlay.raise_()
@@ -76,17 +79,25 @@ class MainWindow(QMainWindow):
 
             except Exception as e:
                 QMessageBox.critical(
-                    self,
-                    "Erro ao carregar OPs",
-                    f"Ocorreu um erro:\n{str(e)}"
+                    self, "Erro ao carregar OPs", f"Ocorreu um erro:\n{str(e)}"
                 )
 
             finally:
                 self.loading_overlay.hide()
 
-        self.tabs.addTab(MainTab(self.configs, self.printer), "Principal")
-        self.tabs.addTab(AddOperatorTab(self.configs), "Adicionar Operador")
-        self.tabs.addTab(ConfigsTab(self.configs, self.printer), "Configurações")
+        self.main_tab = MainTab(self.configs, self.printer)
+        self.add_operator_tab = AddOperatorTab(self.configs)
+        self.configs_tab = ConfigsTab(self.configs, self.printer)
+
+        self.tabs.addTab(self.main_tab, "Principal")
+        self.tabs.addTab(self.add_operator_tab, "Adicionar Operador")
+        self.tabs.addTab(self.configs_tab, "Configurações")
+
+        # Synchronize operator list when a new one is added
+        self.add_operator_tab.add_operator_widget.operator_added.connect(
+            self.main_tab.main_widget.operator_list_widget.populate
+        )
+
         self.tabs.setCurrentIndex(0)
 
         self.show()

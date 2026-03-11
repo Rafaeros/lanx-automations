@@ -20,7 +20,7 @@ class OperatorListWidget(QWidget):
 
         self.remove_operator_btn = QPushButton("Remover Operador")
         self.remove_operator_btn.setIcon(QIcon(resource_path("core/assets/bin.png")))
-        self.remove_operator_btn.setStyleSheet("background-color: red")
+        self.remove_operator_btn.setObjectName("danger")
         self.operators_list = QListWidget()
 
         self.populate_list()
@@ -32,11 +32,13 @@ class OperatorListWidget(QWidget):
         self.setLayout(self.v_layout)
 
     def populate_list(self):
+        """Populates the list widget with operator names from configs."""
         self.operators_list.clear()
         for operator in self.configs.operators:
             self.operators_list.addItem(operator["name"])
 
     def remove_operator(self):
+        """Removes the selected operator from the list and configuration."""
         selected_item = self.operators_list.currentItem()
         if selected_item:
             self.configs.remove_operator(selected_item.text())

@@ -1,11 +1,7 @@
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QComboBox,
-    QLabel
-)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel
 
 from core.configs import Configs
+
 
 class SelectOperatorWidget(QWidget):
     def __init__(self, configs: Configs, parent=None):
@@ -20,6 +16,8 @@ class SelectOperatorWidget(QWidget):
         self.setLayout(self.main_layout)
 
     def populate(self):
+        """Refreshes the operator list from the current configuration."""
+        self.operator_combo_box.clear()
         operators = self.configs.get("operators")
         if not operators:
             return

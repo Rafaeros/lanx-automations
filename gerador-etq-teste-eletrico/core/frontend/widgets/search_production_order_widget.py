@@ -49,15 +49,22 @@ class SearchProductOrderWidget(QWidget):
 
         self.setLayout(self.main_layout)
 
+    def clear_inputs(self):
+        """Clears all input fields and resets focus to the search input."""
+        self.product_input.setText("")
+        self.client_input.setText("")
+        self.quantity_input.setText("")
+        self.description_input.setText("")
+        self.client_code_input.setText("")
+        self.search_input.setText("")
+        self.search_input.setFocus()
+
     def search_order(self):
+        """Searches for an order by code and populates fields if found."""
         code = self.search_input.text()
         order: Order = self.order_manager.get_order_by_code(code)
         if order is None:
-            self.product_input.setText("")
-            self.client_input.setText("")
-            self.quantity_input.setText("")
-            self.description_input.setText("")
-            self.client_code_input.setText("")
+            self.clear_inputs()
             QMessageBox.warning(self, "Aviso", "Ordem de Produção não encontrada")
             return
 

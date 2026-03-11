@@ -10,5 +10,6 @@ class MainTab(QWidget):
         self.configs = configs
         self.printer = printer
         self.main_layout = QVBoxLayout()
-        self.main_layout.addWidget(MainWidget(self.configs, self.printer))
+        self.main_widget = MainWidget(self.configs, self.printer)
+        self.main_layout.addWidget(self.main_widget)
         self.setLayout(self.main_layout)
