@@ -91,7 +91,7 @@ def generate_normal_img(code, product, client, operator, description, client_cod
     draw.text((x_px(45), y_px(29)), "DATA:", font=f_bold, fill="black")
     draw.text((x_px(4), y_px(24.5)), "OPER:", font=f_bold, fill="black")
     draw.text((x_px(45), y_px(24.5)), "HORA:", font=f_bold, fill="black")
-    draw.text((x_px(4), y_px(20)), "PROD:", font=f_bold, fill="black")
+    draw.text((x_px(4), y_px(20.5)), "PROD:", font=f_bold, fill="black")
     
     draw.text((x_px(18.5), y_px(33.5)), product, font=f_reg, fill="black")
     draw.text((x_px(61), y_px(33.5)), client_short, font=f_reg, fill="black")
@@ -99,25 +99,26 @@ def generate_normal_img(code, product, client, operator, description, client_cod
     draw.text((x_px(58), y_px(29)), date, font=f_reg, fill="black")
     draw.text((x_px(14.5), y_px(24.5)), operator, font=f_reg, fill="black")
     draw.text((x_px(58), y_px(24.5)), hour, font=f_reg, fill="black")
-    
-    desc_lines = simple_split_pil(description, f_reg, x_px(42))
-    second_line = False
-    
-    if desc_lines:
-        draw.text((x_px(14.5), y_px(20)), desc_lines[0], font=f_reg, fill="black")
-        if len(desc_lines) > 1:
-            second_line = True
-            desc_lines_2 = simple_split_pil(" ".join(desc_lines[1:]), f_reg, x_px(50))
-            line2 = desc_lines_2[0] + ("..." if len(desc_lines_2) > 1 else "")
-            draw.text((x_px(4), y_px(16)), line2, font=f_reg, fill="black")
 
-    c_cli_y, box_y, box_text_y = (11, 1, 2.5) if second_line else (15, 5, 6.5)
+    desc_lines = simple_split_pil(description, f_reg, x_px(40))
+    if desc_lines:
+        draw.text((x_px(14.5), y_px(20.5)), desc_lines[0], font=f_reg, fill="black")
+        if len(desc_lines) > 1:
+            desc_lines_rest = simple_split_pil(" ".join(desc_lines[1:]), f_reg, x_px(50.5))
+            if desc_lines_rest:
+                draw.text((x_px(4), y_px(17.0)), desc_lines_rest[0], font=f_reg, fill="black")
+                if len(desc_lines_rest) > 1:
+                    line3 = desc_lines_rest[1] + ("..." if len(desc_lines_rest) > 2 else "")
+                    draw.text((x_px(4), y_px(13.5)), line3, font=f_reg, fill="black")
+
+    c_cli_y, box_y, qr_y = 10, 1.5, 4.5
 
     if client_code:
         draw.text((x_px(4), y_px(c_cli_y)), "COD. CLIENTE:", font=f_bold, fill="black")
-        draw.text((x_px(27), y_px(c_cli_y)), client_code, font=f_reg, fill="black")
+        draw.text((x_px(24), y_px(c_cli_y)), client_code, font=f_reg, fill="black")
 
-    rect_top = y_px(box_y + 6)
+    box_h = 6
+    rect_top = y_px(box_y + box_h)
     rect_bottom = y_px(box_y)
     draw.rectangle([x_px(4), rect_top, x_px(34), rect_bottom], outline="black", width=2)
 
@@ -137,7 +138,7 @@ def generate_normal_img(code, product, client, operator, description, client_cod
     qr.add_data(qr_data)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="black", back_color="white").resize((x_px(16), x_px(16)), Image.NEAREST)
-    img.paste(qr_img, (x_px(66), y_px(box_y + 16)))
+    img.paste(qr_img, (x_px(66), y_px(qr_y + 16)))
     
     img = img.transpose(Image.ROTATE_180)
     img.save(LABEL_IMG_PATH)
@@ -218,7 +219,7 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(45 * mm, 29 * mm, "DATA:")
         c.drawString(4 * mm, 24.5 * mm, "OPER:")
         c.drawString(45 * mm, 24.5 * mm, "HORA:")
-        c.drawString(4 * mm, 20 * mm, "PROD:")
+        c.drawString(4 * mm, 20.5 * mm, "PROD:")
         
         c.setFont("Helvetica", 8)
         c.drawString(17.5 * mm, 33.5 * mm, product)
@@ -227,22 +228,19 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
         c.drawString(57 * mm, 29 * mm, date)
         c.drawString(13.5 * mm, 24.5 * mm, operator)
         c.drawString(57 * mm, 24.5 * mm, hour)
-        
-        desc_lines = simpleSplit(description, "Helvetica", 8, 42 * mm)
-        second_line = False
 
+        desc_lines = simpleSplit(description, "Helvetica", 8, 40 * mm)
         if desc_lines:
-            c.drawString(14 * mm, 20 * mm, desc_lines[0])
+            c.drawString(14 * mm, 20.5 * mm, desc_lines[0])
             if len(desc_lines) > 1:
-                second_line = True
-                desc_lines_2 = simpleSplit(" ".join(desc_lines[1:]), "Helvetica", 8, 50 * mm)
-                line2 = desc_lines_2[0] + ("..." if len(desc_lines_2) > 1 else "")
-                c.drawString(4 * mm, 16 * mm, line2)
+                desc_lines_rest = simpleSplit(" ".join(desc_lines[1:]), "Helvetica", 8, 50.5 * mm)
+                if desc_lines_rest:
+                    c.drawString(4 * mm, 17.0 * mm, desc_lines_rest[0])
+                    if len(desc_lines_rest) > 1:
+                        line3 = desc_lines_rest[1] + ("..." if len(desc_lines_rest) > 2 else "")
+                        c.drawString(4 * mm, 13.5 * mm, line3)
 
-        if second_line:
-            c_cli_y, box_y, box_text_y = 11 * mm, 1 * mm, 2 * mm
-        else:
-            c_cli_y, box_y, box_text_y = 15 * mm, 5 * mm, 6 * mm
+        c_cli_y, box_y, qr_y = 10 * mm, 1.5 * mm, 4.5 * mm
 
         
         if client_code:
@@ -254,16 +252,15 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
                 if client_code.startswith("TRUCKS") or client_code.startswith("COD."):
                     client_code = client_code.split(":")[-1].strip()
 
-            c.drawString(28 * mm, c_cli_y, client_code)
+            c.drawString(24.5 * mm, c_cli_y, client_code)
 
         rect_y = box_y
-        text_y = box_text_y
         c.rect(4 * mm, rect_y, 30 * mm, 6 * mm, stroke=1, fill=0)
         c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(19 * mm, text_y, "APROVADO")
-        draw_pdf_qr(c, qr_data, 55.25 * mm, box_y + 1 * mm, 16 * mm, False)
+        c.drawCentredString(19 * mm, rect_y + 1.8 * mm, "APROVADO")
+        draw_pdf_qr(c, qr_data, 55.25 * mm, qr_y + 1 * mm, 16 * mm, False)
         c.setFont("Helvetica-Bold", 6)
-        c.drawCentredString(63.25 * mm, 3 * mm, qr_data)
+        c.drawCentredString(63.25 * mm, 2.8 * mm, qr_data)
         
         c.showPage()
 
