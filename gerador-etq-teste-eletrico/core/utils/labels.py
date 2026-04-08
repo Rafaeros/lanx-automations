@@ -111,7 +111,7 @@ def generate_normal_img(code, product, client, operator, description, client_cod
             line2 = desc_lines_2[0] + ("..." if len(desc_lines_2) > 1 else "")
             draw.text((x_px(4), y_px(16)), line2, font=f_reg, fill="black")
 
-    c_cli_y, box_y, box_text_y = (12, 2, 3.5) if second_line else (16, 6, 7.5)
+    c_cli_y, box_y, box_text_y = (11, 1, 2.5) if second_line else (15, 5, 6.5)
 
     if client_code:
         draw.text((x_px(4), y_px(c_cli_y)), "COD. CLIENTE:", font=f_bold, fill="black")
@@ -136,8 +136,8 @@ def generate_normal_img(code, product, client, operator, description, client_cod
     qr = qrcode.QRCode(version=1, box_size=10, border=0)
     qr.add_data(qr_data)
     qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="black", back_color="white").resize((x_px(QR_SIZE_MM), x_px(QR_SIZE_MM)), Image.NEAREST)
-    img.paste(qr_img, (x_px(66), y_px(box_y + QR_SIZE_MM)))
+    qr_img = qr.make_image(fill_color="black", back_color="white").resize((x_px(16), x_px(16)), Image.NEAREST)
+    img.paste(qr_img, (x_px(66), y_px(box_y + 16)))
     
     img = img.transpose(Image.ROTATE_180)
     img.save(LABEL_IMG_PATH)
@@ -240,9 +240,9 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
                 c.drawString(4 * mm, 16 * mm, line2)
 
         if second_line:
-            c_cli_y, box_y, box_text_y = 12 * mm, 2 * mm, 3.5 * mm
+            c_cli_y, box_y, box_text_y = 11 * mm, 1 * mm, 2 * mm
         else:
-            c_cli_y, box_y, box_text_y = 16 * mm, 6 * mm, 7.5 * mm
+            c_cli_y, box_y, box_text_y = 15 * mm, 5 * mm, 6 * mm
 
         
         if client_code:
@@ -256,14 +256,14 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
 
             c.drawString(28 * mm, c_cli_y, client_code)
 
-        rect_y = box_y + 2 * mm
-        text_y = box_text_y + 2 * mm
+        rect_y = box_y
+        text_y = box_text_y
         c.rect(4 * mm, rect_y, 30 * mm, 6 * mm, stroke=1, fill=0)
         c.setFont("Helvetica-Bold", 10)
         c.drawCentredString(19 * mm, text_y, "APROVADO")
-        draw_pdf_qr(c, qr_data, 55.25 * mm, box_y + 3 * mm, 20 * mm, False)
+        draw_pdf_qr(c, qr_data, 55.25 * mm, box_y + 1 * mm, 16 * mm, False)
         c.setFont("Helvetica-Bold", 6)
-        c.drawCentredString(64 * mm, 5 * mm, qr_data)
+        c.drawCentredString(63.25 * mm, 3 * mm, qr_data)
         
         c.showPage()
 
