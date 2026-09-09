@@ -30,7 +30,12 @@ from schemas.reports_schemas import (
 def _parse_float(value: str) -> float:
     """
     Converte uma string para float, lidando com formatos brasileiros (ex: "1.300,00")
-    e aplicando uma heurística para valores ambíguos como "1.300".
+    e com valores que usam ponto como separador decimal (ex: "3.000" = 3).
+
+    Regra: vírgula presente -> formato BR (ponto é milhar, vírgula é decimal).
+    Múltiplos pontos sem vírgula (ex: "1.234.567") -> pontos são milhar.
+    Um único ponto sem vírgula -> ponto é decimal (nunca inflaciona o valor
+    multiplicando por 1000, mesmo que a fonte às vezes use ponto como milhar).
 
     Args:
         value (str): A string numérica a ser convertida.
@@ -47,13 +52,8 @@ def _parse_float(value: str) -> float:
 
     if "," in cleaned_value:
         cleaned_value = cleaned_value.replace(".", "").replace(",", ".")
-
-    elif "." in cleaned_value:
-        parts = cleaned_value.split(".")
-        if len(parts[-1]) == 3 and len(parts) > 1:
-            cleaned_value = "".join(parts)
-        else:
-            cleaned_value = "".join(parts[:-1]) + "." + parts[-1]
+    elif cleaned_value.count(".") > 1:
+        cleaned_value = cleaned_value.replace(".", "")
 
     try:
         return float(cleaned_value)
