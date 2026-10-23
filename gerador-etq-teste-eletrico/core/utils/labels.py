@@ -154,7 +154,8 @@ def generate_mwm_img(code, product, client, operator, client_code, date, hour):
         
     date_parts = date.split("/")
     american_date = f"{date_parts[1]}{date_parts[0]}{date_parts[2]}" if len(date_parts) == 3 else date.replace("/", "")
-    qr_data = f"{american_date};{client_code};0;{code};15336"
+    product_revision = str(int(product.split(" ")[1]))
+    qr_data = f"{american_date};{client_code};{product_revision};{code};15336"
     client_short = client.split(" ")[0] if client else ""
 
     img = Image.new("RGB", (PAGE_W_PX, PAGE_H_PX), "white")
@@ -270,7 +271,8 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
 def generate_mwm_pdf(code, product, client, operator, client_code, date, hour, quantity):
     date_parts = date.split("/")
     american_date = f"{date_parts[1]}{date_parts[0]}{date_parts[2]}" if len(date_parts) == 3 else date.replace("/", "")
-    qr_data = f"{american_date};{client_code};0;{code};15336"
+    product_revision = str(int(product.split(" ")[1]))
+    qr_data = f"{american_date};{client_code};{product_revision};{code};15336"
     client_short = client.split(" ")[0] if client else ""
 
     c = canvas.Canvas(LABEL_PATH, pagesize=(PAGE_W, PAGE_H))
