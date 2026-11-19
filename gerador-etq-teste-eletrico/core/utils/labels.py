@@ -58,13 +58,13 @@ def simple_split_pil(text, font, max_width_px):
     return lines
 
 def resolve_client_label(client, client_aliases=None):
-    """Returns the alias registered for the client, or its first two words."""
+    """Returns the alias registered for the client, or its first word."""
     client = (client or "").strip()
     key = " ".join(client.upper().split())
     for item in client_aliases or []:
         if " ".join(item.get("name", "").upper().split()) == key and item.get("alias"):
             return item["alias"].strip()
-    return " ".join(client.split(" ")[:2])
+    return client.split(" ")[0] if client else ""
 
 def fit_font_pil(text, font, max_width_px, min_size=8):
     """Shrinks a truetype font until text fits max_width_px."""
