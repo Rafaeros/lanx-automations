@@ -127,6 +127,7 @@ class MainWidget(QWidget):
                 date_part,
                 time_part,
                 quantity=quantity,
+                client_aliases=self.configs.client_aliases,
             )
 
             if not file_path or not os.path.exists(file_path):

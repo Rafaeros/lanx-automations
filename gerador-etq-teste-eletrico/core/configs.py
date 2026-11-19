@@ -18,6 +18,7 @@ class ConfigManager:
                 "password": "",
                 "printer": "",
                 "operators": [],
+                "client_aliases": [],
             }
             self.save()
 
@@ -50,6 +51,7 @@ class Configs(ConfigManager):
         self.data["operators"] = [
             o if isinstance(o, dict) else {"name": o} for o in ops
         ]
+        self.data.setdefault("client_aliases", [])
         self.save()
 
     @property
@@ -66,4 +68,22 @@ class Configs(ConfigManager):
         ]
         self.save()
 
+    @property
+    def client_aliases(self):
+        return self.data.setdefault("client_aliases", [])
 
+    def set_client_alias(self, name: str, alias: str):
+        key = " ".join(name.upper().split())
+        aliases = [
+            a for a in self.client_aliases
+            if " ".join(a["name"].upper().split()) != key
+        ]
+        aliases.append({"name": name, "alias": alias})
+        self.data["client_aliases"] = aliases
+        self.save()
+
+    def remove_client_alias(self, name: str):
+        self.data["client_aliases"] = [
+            a for a in self.client_aliases if a["name"] != name
+        ]
+        self.save()

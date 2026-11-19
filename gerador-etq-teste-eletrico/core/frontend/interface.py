@@ -13,6 +13,7 @@ from core.session_manager import AuthOnCM
 from core.utils.path_utils import resource_path
 from core.frontend.tabs.add_operator_tab import AddOperatorTab
 from core.frontend.tabs.main_tab import MainTab
+from core.frontend.tabs.client_alias_tab import ClientAliasTab
 from core.frontend.widgets.loading_overlay import LoadingOverlay
 from core.frontend.widgets.credentials_dialog_widget import CredentialsDialog
 from core.utils.printer import PrinterManager
@@ -87,10 +88,12 @@ class MainWindow(QMainWindow):
 
         self.main_tab = MainTab(self.configs, self.printer)
         self.add_operator_tab = AddOperatorTab(self.configs)
+        self.client_alias_tab = ClientAliasTab(self.configs)
         self.configs_tab = ConfigsTab(self.configs, self.printer)
 
         self.tabs.addTab(self.main_tab, "Principal")
         self.tabs.addTab(self.add_operator_tab, "Adicionar Operador")
+        self.tabs.addTab(self.client_alias_tab, "Clientes")
         self.tabs.addTab(self.configs_tab, "Configurações")
 
         # Synchronize operator list when a new one is added

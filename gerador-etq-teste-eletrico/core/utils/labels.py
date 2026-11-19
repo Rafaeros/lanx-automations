@@ -6,6 +6,7 @@ from reportlab.graphics.barcode import qr
 from reportlab.lib.colors import CMYKColor
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.utils import simpleSplit
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
 
@@ -56,6 +57,32 @@ def simple_split_pil(text, font, max_width_px):
         lines.append(" ".join(current_line))
     return lines
 
+def resolve_client_label(client, client_aliases=None):
+    """Returns the alias registered for the client, or its first two words."""
+    client = (client or "").strip()
+    key = " ".join(client.upper().split())
+    for item in client_aliases or []:
+        if " ".join(item.get("name", "").upper().split()) == key and item.get("alias"):
+            return item["alias"].strip()
+    return " ".join(client.split(" ")[:2])
+
+def fit_font_pil(text, font, max_width_px, min_size=8):
+    """Shrinks a truetype font until text fits max_width_px."""
+    path = getattr(font, "path", None)
+    size = getattr(font, "size", None)
+    if not path or not size:
+        return font
+    while size > min_size and font.getlength(text) > max_width_px:
+        size -= 1
+        font = ImageFont.truetype(path, size)
+    return font
+
+def fit_size_pdf(text, font_name, size, max_width, min_size=4):
+    """Shrinks a PDF font size until text fits max_width."""
+    while size > min_size and stringWidth(text, font_name, size) > max_width:
+        size -= 0.25
+    return size
+
 def draw_pdf_qr(c, qr_data, x, y, size, with_text=False):
     qr_code = qr.QrCodeWidget(qr_data)
     bounds = qr_code.getBounds()
@@ -69,7 +96,7 @@ def draw_pdf_qr(c, qr_data, x, y, size, with_text=False):
         c.setFont("Helvetica", 5)
         c.drawCentredString(x + (size / 2), y - (2.5 * mm), qr_data)
 
-def generate_normal_img(code, product, client, operator, description, client_code, date, hour):
+def generate_normal_img(code, product, client, operator, description, client_code, date, hour, client_aliases=None):
     f_reg, f_bold, f_aprov, _, f_mini = get_fonts()
     
     # Process Trucks client_code
@@ -79,26 +106,26 @@ def generate_normal_img(code, product, client, operator, description, client_cod
         if ":" in client_code:
             client_code = client_code.split(":")[-1].strip()
     
-    client_short = first_name # Using first name for the label
+    client_short = resolve_client_label(client, client_aliases)
     qr_data = f"{code};{product};{date.replace('/', '-')};{hour}"
     
     img = Image.new("RGB", (PAGE_W_PX, PAGE_H_PX), "white")
     draw = ImageDraw.Draw(img)
     
     draw.text((x_px(4), y_px(33.5)), "CODIGO:", font=f_bold, fill="black")
-    draw.text((x_px(45), y_px(33.5)), "CLIENTE:", font=f_bold, fill="black")
-    draw.text((x_px(4), y_px(29)), "LOTE:", font=f_bold, fill="black")
+    draw.text((x_px(45), y_px(33.5)), "OPER:", font=f_bold, fill="black")
+    draw.text((x_px(4), y_px(29)), "CLIENTE:", font=f_bold, fill="black")
     draw.text((x_px(45), y_px(29)), "DATA:", font=f_bold, fill="black")
-    draw.text((x_px(4), y_px(24.5)), "OPER:", font=f_bold, fill="black")
+    draw.text((x_px(4), y_px(24.5)), "LOTE:", font=f_bold, fill="black")
     draw.text((x_px(45), y_px(24.5)), "HORA:", font=f_bold, fill="black")
     draw.text((x_px(4), y_px(20.5)), "PROD:", font=f_bold, fill="black")
     
     draw.text((x_px(18.5), y_px(33.5)), product, font=f_reg, fill="black")
-    draw.text((x_px(61), y_px(33.5)), client_short, font=f_reg, fill="black")
-    draw.text((x_px(14.5), y_px(29)), code, font=f_reg, fill="black")
-    draw.text((x_px(58), y_px(29)), date, font=f_reg, fill="black")
-    draw.text((x_px(14.5), y_px(24.5)), operator, font=f_reg, fill="black")
-    draw.text((x_px(58), y_px(24.5)), hour, font=f_reg, fill="black")
+    draw.text((x_px(45) + int(f_bold.getlength("OPER:")) + x_px(1.2), y_px(33.5)), operator, font=fit_font_pil(operator, f_reg, x_px(24)), fill="black")
+    draw.text((x_px(18.5), y_px(29)), client_short, font=fit_font_pil(client_short, f_reg, x_px(25)), fill="black")
+    draw.text((x_px(45) + int(f_bold.getlength("DATA:")) + x_px(1.2), y_px(29)), date, font=f_reg, fill="black")
+    draw.text((x_px(14.5), y_px(24.5)), code, font=f_reg, fill="black")
+    draw.text((x_px(45) + int(f_bold.getlength("HORA:")) + x_px(1.2), y_px(24.5)), hour, font=f_reg, fill="black")
 
     desc_lines = simple_split_pil(description, f_reg, x_px(40))
     if desc_lines:
@@ -115,7 +142,7 @@ def generate_normal_img(code, product, client, operator, description, client_cod
 
     if client_code:
         draw.text((x_px(4), y_px(c_cli_y)), "COD. CLIENTE:", font=f_bold, fill="black")
-        draw.text((x_px(24), y_px(c_cli_y)), client_code, font=f_reg, fill="black")
+        draw.text((x_px(4) + int(f_bold.getlength("COD. CLIENTE:")) + x_px(1.2), y_px(c_cli_y)), client_code, font=f_reg, fill="black")
 
     box_h = 6
     rect_top = y_px(box_y + box_h)
@@ -199,7 +226,7 @@ def generate_mwm_img(code, product, client, operator, client_code, date, hour):
     
     return LABEL_IMG_PATH
 
-def generate_normal_pdf(code, product, client, operator, description, client_code, date, hour, quantity):
+def generate_normal_pdf(code, product, client, operator, description, client_code, date, hour, quantity, client_aliases=None):
     qr_data = f"{code};{product};{date.replace('/', '-')};{hour}"
     c = canvas.Canvas(LABEL_PATH, pagesize=(PAGE_W, PAGE_H))
 
@@ -211,24 +238,27 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
             if ":" in client_code:
                 client_code = client_code.split(":")[-1].strip()
 
-        client_short = first_name
+        client_short = resolve_client_label(client, client_aliases)
         c.setFillColor(SOFT_BLACK)
         c.setFont("Helvetica-Bold", 8)
         c.drawString(4 * mm, 33.5 * mm, "CODIGO:")
-        c.drawString(45 * mm, 33.5 * mm, "CLIENTE:")
-        c.drawString(4 * mm, 29 * mm, "LOTE:")
+        c.drawString(45 * mm, 33.5 * mm, "OPER:")
+        c.drawString(4 * mm, 29 * mm, "CLIENTE:")
         c.drawString(45 * mm, 29 * mm, "DATA:")
-        c.drawString(4 * mm, 24.5 * mm, "OPER:")
+        c.drawString(4 * mm, 24.5 * mm, "LOTE:")
         c.drawString(45 * mm, 24.5 * mm, "HORA:")
         c.drawString(4 * mm, 20.5 * mm, "PROD:")
         
         c.setFont("Helvetica", 8)
         c.drawString(17.5 * mm, 33.5 * mm, product)
-        c.drawString(60 * mm, 33.5 * mm, client_short)
-        c.drawString(13.5 * mm, 29 * mm, code)
-        c.drawString(57 * mm, 29 * mm, date)
-        c.drawString(13.5 * mm, 24.5 * mm, operator)
-        c.drawString(57 * mm, 24.5 * mm, hour)
+        c.setFont("Helvetica", fit_size_pdf(operator, "Helvetica", 8, 26 * mm))
+        c.drawString(45 * mm + stringWidth("OPER:", "Helvetica-Bold", 8) + 1.2 * mm, 33.5 * mm, operator)
+        c.setFont("Helvetica", fit_size_pdf(client_short, "Helvetica", 8, 25 * mm))
+        c.drawString(17.5 * mm, 29 * mm, client_short)
+        c.setFont("Helvetica", 8)
+        c.drawString(45 * mm + stringWidth("DATA:", "Helvetica-Bold", 8) + 1.2 * mm, 29 * mm, date)
+        c.drawString(13.5 * mm, 24.5 * mm, code)
+        c.drawString(45 * mm + stringWidth("HORA:", "Helvetica-Bold", 8) + 1.2 * mm, 24.5 * mm, hour)
 
         desc_lines = simpleSplit(description, "Helvetica", 8, 40 * mm)
         if desc_lines:
@@ -253,7 +283,7 @@ def generate_normal_pdf(code, product, client, operator, description, client_cod
                 if client_code.startswith("TRUCKS") or client_code.startswith("COD."):
                     client_code = client_code.split(":")[-1].strip()
 
-            c.drawString(24.5 * mm, c_cli_y, client_code)
+            c.drawString(4 * mm + stringWidth("COD. CLIENTE:", "Helvetica-Bold", 8) + 1.2 * mm, c_cli_y, client_code)
 
         rect_y = box_y
         c.rect(4 * mm, rect_y, 30 * mm, 6 * mm, stroke=1, fill=0)
@@ -314,15 +344,15 @@ def generate_mwm_pdf(code, product, client, operator, client_code, date, hour, q
     c.save()
     return LABEL_PATH
 
-def generate_labels(code, product, client, operator, description, client_code, date, hour, quantity):
+def generate_labels(code, product, client, operator, description, client_code, date, hour, quantity, client_aliases=None):
     is_linux = platform.system().lower().startswith("linux")
     if is_linux:
         if product.startswith("MWM"):
             return generate_mwm_img(code, product, client, operator, client_code, date, hour)
         else:
-            return generate_normal_img(code, product, client, operator, description, client_code, date, hour)
+            return generate_normal_img(code, product, client, operator, description, client_code, date, hour, client_aliases)
     else:
         if product.startswith("MWM"):
             return generate_mwm_pdf(code, product, client, operator, client_code, date, hour, quantity)
         else:
-            return generate_normal_pdf(code, product, client, operator, description, client_code, date, hour, quantity)
+            return generate_normal_pdf(code, product, client, operator, description, client_code, date, hour, quantity, client_aliases)
